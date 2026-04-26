@@ -7,7 +7,9 @@ namespace Kani\Otp\Tests\Support;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Kani\Otp\Contracts\MustNemesis;
+use Kani\Otp\Contracts\MustOtpChannels;
 use Kani\Otp\Traits\HasNemesisTokens;
+use Kani\Otp\Traits\HasOneTimePasswords;
 
 /**
  * Test model for checkpoints (billeterie) that can authenticate with tokens.
@@ -17,9 +19,9 @@ use Kani\Otp\Traits\HasNemesisTokens;
  *
  * @package Kani\Otp\Tests\Support
  */
-final class TestCheckPoint extends Model implements MustNemesis
+final class TestCheckPoint extends Model implements MustOtpChannels
 {
-    use HasNemesisTokens;
+    use HasOneTimePasswords;
     use SoftDeletes;
 
     /**
@@ -60,19 +62,12 @@ final class TestCheckPoint extends Model implements MustNemesis
     public $timestamps = true;
 
     /**
-     * Define the format for authenticated API responses.
+     * Get the OTP delivery channels for this user.
      *
-     * @return array<string, mixed>
+     * @return array<int, string>
      */
-    public function nemesisFormat(): array
+    public function getOtpChannels(): array
     {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'location' => $this->location,
-            'status' => $this->is_active ? 'active' : 'inactive',
-            'last_seen' => $this->last_ping_at?->toIso8601String(),
-            'type' => 'checkpoint',
-        ];
+        return ['mail'];
     }
 }

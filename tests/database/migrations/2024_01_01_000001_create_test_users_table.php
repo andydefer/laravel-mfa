@@ -7,29 +7,21 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Migration to create test database tables for Nemesis package testing.
+ * Migration to create the test_users table for package testing.
  *
- * Creates test_user and test_api_client tables that support the MustNemesis
- * interface for testing multi-model token authentication.
- * Modified to support additional fields for TestCustomFormatUser.
- *
- * @package Kani\Otp\Tests\Database\Migrations
+ * This table is used exclusively by the test suite to verify OTP
+ * functionality with a realistic Eloquent model. It includes standard
+ * user fields and soft deletes support.
  */
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Run the migration.
+     *
+     * Creates the test_users table with standard user authentication fields,
+     * timestamps, and soft delete support.
      */
     public function up(): void
-    {
-        $this->createTestUsersTable();
-        $this->createTestApiClientsTable();
-    }
-
-    /**
-     * Create the test_users table for testing user authentication.
-     */
-    private function createTestUsersTable(): void
     {
         Schema::create('test_users', function (Blueprint $table): void {
             $table->id();
@@ -44,25 +36,12 @@ return new class extends Migration
     }
 
     /**
-     * Create the test_api_clients table for testing API client authentication.
-     */
-    private function createTestApiClientsTable(): void
-    {
-        Schema::create('test_api_clients', function (Blueprint $table): void {
-            $table->id();
-            $table->string('name');
-            $table->string('api_key')->unique();
-            $table->timestamps();
-            $table->softDeletes();
-        });
-    }
-
-    /**
-     * Reverse the migrations.
+     * Reverse the migration.
+     *
+     * Drops the test_users table if it exists.
      */
     public function down(): void
     {
-        Schema::dropIfExists('test_api_clients');
         Schema::dropIfExists('test_users');
     }
 };

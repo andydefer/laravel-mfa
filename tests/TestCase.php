@@ -10,7 +10,7 @@ use Kani\Otp\OtpServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 /**
- * Base test case for the Laravel OTP package.
+ * Abstract base test case for the Laravel OTP package.
  *
  * Provides a consistent testing environment with:
  * - SQLite in-memory database for fast, isolated tests
@@ -22,7 +22,7 @@ use Orchestra\Testbench\TestCase as Orchestra;
 abstract class TestCase extends Orchestra
 {
     /**
-     * Setup the test environment.
+     * Set up the test environment before each test.
      *
      * Freezes time to a fixed moment to ensure test consistency
      * across all test cases.
@@ -30,26 +30,24 @@ abstract class TestCase extends Orchestra
     protected function setUp(): void
     {
         parent::setUp();
-
-        // Freeze time to a fixed point for deterministic test results
-        Carbon::setTestNow(Carbon::create(2024, 1, 1, 12, 0, 0));
+        $this->freezeTimeForDeterministicTests();
     }
 
     /**
-     * Clean up the test environment.
+     * Clean up the test environment after each test.
      *
-     * Restores the normal time behavior after tests complete.
+     * Restores the normal time behavior to prevent test pollution.
      */
     protected function tearDown(): void
     {
-        Carbon::setTestNow();
+        $this->restoreNormalTimeBehavior();
         parent::tearDown();
     }
 
     /**
-     * Get the package service providers to register.
+     * Get the package service providers to register for testing.
      *
-     * @param  Application  $app  The Laravel application instance
+     * @param Application $app The Laravel application instance
      * @return array<int, class-string> The service providers to register
      */
     protected function getPackageProviders($app): array
@@ -60,16 +58,56 @@ abstract class TestCase extends Orchestra
     }
 
     /**
-     * Configure the test environment.
+     * Configure the test environment before each test.
      *
      * Sets up SQLite in-memory database and package-specific
-     * configuration defaults for testing.
+     * configuration defaults for isolated, deterministic testing.
      *
-     * @param  Application  $app  The Laravel application instance
+     * @param Application $app The Laravel application instance
      */
     protected function getEnvironmentSetUp($app): void
     {
-        // Configure SQLite in-memory database for fast, isolated tests
+        $this->configureInMemoryDatabase($app);
+        $this->configurePackageDefaultsForTesting($app);
+    }
+
+    /**
+     * Define and run database migrations for tests.
+     *
+     * Loads and executes migrations from:
+     * - Package's database/migrations directory
+     * - Test-specific migrations directory (if exists)
+     */
+    protected function defineDatabaseMigrations(): void
+    {
+        $this->loadPackageMigrations();
+        $this->loadTestMigrations();
+        $this->runMigrations();
+    }
+
+    /**
+     * Freeze time to a fixed moment for deterministic test results.
+     */
+    private function freezeTimeForDeterministicTests(): void
+    {
+        Carbon::setTestNow(Carbon::create(2024, 1, 1, 12, 0, 0));
+    }
+
+    /**
+     * Restore normal time behavior after test completion.
+     */
+    private function restoreNormalTimeBehavior(): void
+    {
+        Carbon::setTestNow();
+    }
+
+    /**
+     * Configure SQLite in-memory database for fast, isolated tests.
+     *
+     * @param Application $app The Laravel application instance
+     */
+    private function configureInMemoryDatabase(Application $app): void
+    {
         $app['config']->set('database.default', 'testbench');
         $app['config']->set('database.connections.testbench', [
             'driver' => 'sqlite',
@@ -77,8 +115,15 @@ abstract class TestCase extends Orchestra
             'prefix' => '',
             'foreign_key_constraints' => false,
         ]);
+    }
 
-        // Configure OTP package defaults for testing
+    /**
+     * Configure OTP package defaults optimized for testing.
+     *
+     * @param Application $app The Laravel application instance
+     */
+    private function configurePackageDefaultsForTesting(Application $app): void
+    {
         $app['config']->set('otp.default_expiry_minutes', 10);
         $app['config']->set('otp.default_max_attempts', 3);
         $app['config']->set('otp.cleanup.auto_cleanup', false);
@@ -90,31 +135,37 @@ abstract class TestCase extends Orchestra
     }
 
     /**
-     * Define and run database migrations for tests.
-     *
-     * Loads migrations from both the package's database/migrations
-     * directory and the test-specific migrations directory.
+     * Load migrations from the package's database directory.
      */
-    protected function defineDatabaseMigrations(): void
+    private function loadPackageMigrations(): void
     {
-        // Load package migrations if they exist
         $packageMigrationsPath = __DIR__ . '/../database/migrations';
+
         if (is_dir($packageMigrationsPath)) {
             $this->loadMigrationsFrom($packageMigrationsPath);
         }
+    }
 
-        // Load test-specific migrations if they exist
+    /**
+     * Load test-specific migrations if they exist.
+     */
+    private function loadTestMigrations(): void
+    {
         $testMigrationsPath = __DIR__ . '/database/migrations';
+
         if (is_dir($testMigrationsPath)) {
             $this->loadMigrationsFrom($testMigrationsPath);
         }
+    }
 
-        // Run migrations on the testbench database
+    /**
+     * Execute all loaded migrations.
+     */
+    private function runMigrations(): void
+    {
         $this->artisan('migrate', [
             '--database' => 'testbench',
             '--force' => true,
         ])->run();
-
-        parent::defineDatabaseMigrations();
     }
 }

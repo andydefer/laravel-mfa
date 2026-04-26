@@ -8,38 +8,43 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Kani\Otp\Contracts\MustOtpChannels;
+use Kani\Otp\Helpers\TranslationHelper;
 use Kani\Otp\Models\OneTimePassword;
 
 /**
- * Notification class for sending OTP codes to users.
+ * Notification for delivering OTP codes to users via configured channels.
  *
- * This notification handles the delivery of one-time passwords via configured channels.
- * Channels can be determined from the OTP record itself, from the notifiable entity
- * implementing MustOtpChannels, or fallback to the default 'mail' channel.
+ * This notification dynamically determines which channels to use (mail, sms, etc.)
+ * based on: 1) OTP record's stored channels, 2) Notifiable's channel preferences,
+ * or 3) falls back to default 'mail' channel.
+ *
+ * Supports localization for multi-language applications.
  */
-class OtpNotification extends Notification
+final class OtpNotification extends Notification
 {
     use Queueable;
 
     /**
-     * Create a new notification instance.
+     * Create a new OTP notification instance.
      *
-     * @param OneTimePassword $otp The OTP model containing the code and metadata
+     * @param OneTimePassword $otp The OTP model instance containing metadata
+     * @param string $plainCode The plain text OTP code (not stored in DB)
      */
     public function __construct(
-        private readonly OneTimePassword $otp
+        private readonly OneTimePassword $otp,
+        private readonly string $plainCode
     ) {}
 
     /**
-     * Get the notification's delivery channels.
+     * Determine the delivery channels for the notification.
      *
-     * Priority order for channel resolution:
-     * 1. Channels stored in the OTP record (if present and non-empty)
-     * 2. Channels from notifiable entity implementing MustOtpChannels
-     * 3. Fallback to ['mail']
+     * Priority order:
+     * 1. Channels stored in OTP record (from original request)
+     * 2. Channels defined by notifiable via MustOtpChannels contract
+     * 3. Default ['mail'] channel
      *
      * @param mixed $notifiable The entity receiving the notification
-     * @return array<int, string> List of channel names
+     * @return array<int, string> List of delivery channels
      */
     public function via($notifiable): array
     {
@@ -57,85 +62,82 @@ class OtpNotification extends Notification
     }
 
     /**
-     * Get the mail representation of the notification.
+     * Build the mail message for OTP delivery.
      *
      * @param mixed $notifiable The entity receiving the notification
-     * @return MailMessage The formatted email message
+     * @return MailMessage The configured email message
      */
     public function toMail($notifiable): MailMessage
     {
         $expiresIn = $this->otp->expires_at->diffInMinutes(now());
-        $plainCode = $this->extractPlainCode();
+        $greeting = $this->buildGreeting($notifiable);
+        $codeBlock = $this->buildCodeBlock();
 
         return (new MailMessage)
-            ->subject('Votre code de vérification')
-            ->greeting($this->buildGreeting($notifiable))
-            ->line('Veuillez utiliser le code de vérification ci-dessous :')
+            ->subject(TranslationHelper::trans('messages.subject', ['app_name' => config('app.name')]))
+            ->greeting($greeting)
+            ->line(TranslationHelper::trans('messages.intro'))
             ->line('')
-            ->line("<div style='text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; padding: 20px; background-color: #f3f4f6; border-radius: 8px;'>")
-            ->line($plainCode)
-            ->line('</div>')
+            ->line($codeBlock)
             ->line('')
-            ->line("Ce code expirera dans {$expiresIn} minute(s).")
-            ->line('Si vous n\'avez pas demandé cette vérification, veuillez ignorer cet email.')
-            ->salutation("Cordialement,\n" . config('app.name'));
+            ->line(TranslationHelper::trans('messages.expires_in', ['minutes' => $expiresIn]))
+            ->line(TranslationHelper::trans('messages.ignore_request'))
+            ->salutation(TranslationHelper::trans('messages.salutation', ['app_name' => config('app.name')]));
     }
 
     /**
-     * Extract channels from the OTP record if valid.
+     * Extract and validate channels stored in the OTP record.
      *
-     * @return array<int, string>|null Channel list or null if not set or invalid
+     * @return array<int, string>|null Channels array or null if invalid/empty
      */
     private function getChannelsFromOtp(): ?array
     {
-        if (!$this->hasValidChannelsInOtp()) {
+        $channels = $this->otp->channels;
+
+        if ($channels === null || !is_array($channels) || empty($channels)) {
             return null;
         }
 
-        return $this->otp->channels;
+        return $channels;
     }
 
     /**
-     * Check if the OTP record contains valid channels.
-     */
-    private function hasValidChannelsInOtp(): bool
-    {
-        return $this->otp->channels !== null
-            && is_array($this->otp->channels)
-            && !empty($this->otp->channels);
-    }
-
-    /**
-     * Build the greeting line for the email.
+     * Build the personalized greeting for the notification.
      *
      * @param mixed $notifiable The entity receiving the notification
+     * @return string Personalized greeting
      */
     private function buildGreeting($notifiable): string
     {
         $name = $this->extractNotifiableName($notifiable);
+        $template = TranslationHelper::trans('messages.greeting');
 
-        return "Bonjour {$name} !";
+        return sprintf($template, $name);
     }
 
     /**
      * Extract a human-readable name from the notifiable entity.
      *
      * @param mixed $notifiable The entity receiving the notification
+     * @return string User's name, email, or fallback
      */
     private function extractNotifiableName($notifiable): string
     {
-        return $notifiable->name ?? $notifiable->email ?? 'Utilisateur';
+        return $notifiable->name
+            ?? $notifiable->email
+            ?? TranslationHelper::trans('messages.default_user_name');
     }
 
     /**
-     * Extract the plaintext OTP code from the stored hash.
+     * Build the HTML code block for email display.
      *
-     * Note: This is a simplified approach assuming the plain code is stored
-     * as a prefix of the hash. For production, the plain code should be
-     * stored separately or generated deterministically.
+     * @return string HTML string containing the styled OTP code
      */
-    private function extractPlainCode(): string
+    private function buildCodeBlock(): string
     {
-        return substr($this->otp->token_hash, 0, 6);
+        return sprintf(
+            "<div style='text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; padding: 20px; background-color: #f3f4f6; border-radius: 8px;'>\n%s\n</div>",
+            $this->plainCode
+        );
     }
 }

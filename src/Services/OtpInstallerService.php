@@ -8,20 +8,18 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
+use RuntimeException;
 
 /**
- * Service for installing and setting up the Laravel OTP package.
- *
- * Handles the complete installation process including:
- * - Publishing configuration files
- * - Publishing database migrations
- * - Running database migrations
- * - Validating existing installations
+ * Installation service for the Laravel OTP package.
+ * 
+ * Handles the complete installation process including publishing configuration
+ * files, migrations, and running database migrations.
  */
-final class OtpInstallerService
+class OtpInstallerService
 {
     /**
-     * Core tables required by the OTP package.
+     * Core database tables required for OTP functionality.
      *
      * @var array<int, string>
      */
@@ -30,16 +28,15 @@ final class OtpInstallerService
     ];
 
     /**
-     * Execute the complete OTP package installation process.
+     * Execute the complete package installation.
      *
-     * @param Command $command The console command instance for output and input
-     * @param bool    $force   Force overwrite existing files
-     * @param bool    $skipMigrations Skip database migrations
+     * @param Command $command The Artisan command instance for console output
+     * @param bool $force Whether to overwrite existing files
+     * @param bool $skipMigrations Whether to skip running database migrations
      */
     public function install(Command $command, bool $force = false, bool $skipMigrations = false): void
     {
-        $command->info('🔐 Installing Laravel OTP package...');
-        $command->newLine();
+        $this->displayWelcomeMessage($command);
 
         if (!$this->shouldProceedWithInstallation($command, $force)) {
             return;
@@ -57,10 +54,22 @@ final class OtpInstallerService
     }
 
     /**
-     * Determine if the installation should proceed.
+     * Display the package installation welcome message.
      *
-     * Checks for existing installation and confirms with the user
-     * unless force mode is enabled.
+     * @param Command $command The Artisan command instance
+     */
+    private function displayWelcomeMessage(Command $command): void
+    {
+        $command->info('🔐 Installing Laravel OTP package...');
+        $command->newLine();
+    }
+
+    /**
+     * Check if installation should proceed based on current state and user confirmation.
+     *
+     * @param Command $command The Artisan command instance
+     * @param bool $force Whether to force installation without confirmation
+     * @return bool True if installation should proceed, false otherwise
      */
     private function shouldProceedWithInstallation(Command $command, bool $force): bool
     {
@@ -73,7 +82,6 @@ final class OtpInstallerService
 
             if (!$command->confirm('Do you want to reinstall? This may overwrite existing files.', false)) {
                 $command->info('Installation cancelled.');
-
                 return false;
             }
         }
@@ -82,7 +90,6 @@ final class OtpInstallerService
 
         if (!$command->confirm('Continue with installation?', true)) {
             $command->info('Installation cancelled.');
-
             return false;
         }
 
@@ -90,28 +97,35 @@ final class OtpInstallerService
     }
 
     /**
-     * Display what will be installed.
+     * Display the installation plan showing what files will be published.
+     *
+     * @param Command $command The Artisan command instance
      */
     private function displayInstallationPlan(Command $command): void
     {
         $command->warn('📦 This will publish:');
         $command->line('   - Configuration (config/otp.php)');
-        $command->line('   - Database migration (one_time_passwords table)');
+        $command->line('   - Database migrations (one_time_passwords table)');
         $command->newLine();
     }
 
     /**
-     * Check if the package is already installed.
+     * Check if the package has already been installed.
      *
-     * Verifies by checking for config file existence or database tables.
+     * @return bool True if configuration exists or core tables are present
      */
     private function isAlreadyInstalled(): bool
     {
-        return File::exists(config_path('otp.php')) || $this->hasCoreTables();
+        $configPath = config_path('otp.php');
+
+        return File::exists($configPath) || $this->hasCoreTables();
     }
 
     /**
-     * Publish the configuration file.
+     * Publish the package configuration file.
+     *
+     * @param Command $command The Artisan command instance
+     * @param bool $force Whether to overwrite existing configuration file
      */
     private function publishConfiguration(Command $command, bool $force): void
     {
@@ -120,20 +134,21 @@ final class OtpInstallerService
         $sourcePath = $this->getConfigSourcePath();
         $destinationPath = config_path('otp.php');
 
-        if ($this->shouldSkipFileCopy($destinationPath, $force)) {
-            $command->warn('   Config file already exists. Use --force to overwrite.');
+        $this->ensureDirectoryExists(dirname($destinationPath));
 
+        if (File::exists($destinationPath) && !$force) {
+            $command->warn('   Config file already exists. Use --force to overwrite.');
             return;
         }
 
-        $this->ensureDirectoryExists(dirname($destinationPath));
         File::copy($sourcePath, $destinationPath);
-
         $command->info('   ✅ Configuration published to config/otp.php');
     }
 
     /**
      * Get the source path for the configuration file.
+     *
+     * @return string Absolute path to the configuration file
      */
     private function getConfigSourcePath(): string
     {
@@ -141,63 +156,61 @@ final class OtpInstallerService
     }
 
     /**
-     * Publish the migration files.
+     * Publish all package migration files.
+     *
+     * @param Command $command The Artisan command instance
+     * @param bool $force Whether to overwrite existing migration files
      */
     private function publishMigrations(Command $command, bool $force): void
     {
         $command->info('📄 Publishing migrations...');
 
-        $destinationPath = $this->getMigrationDestinationPath();
-        $sourcePath = $this->getMigrationSourcePath();
+        $migrationFiles = $this->getAllMigrationFiles();
 
-        if ($this->shouldSkipFileCopy($destinationPath, $force)) {
-            $command->warn('   Migration already exists. Use --force to overwrite.');
+        foreach ($migrationFiles as $sourcePath) {
+            $destinationPath = $this->getMigrationDestinationPath($sourcePath);
 
-            return;
+            if (File::exists($destinationPath) && !$force) {
+                $command->warn("   Migration " . basename($sourcePath) . " already exists. Use --force to overwrite.");
+                continue;
+            }
+
+            $this->ensureDirectoryExists(dirname($destinationPath));
+            File::copy($sourcePath, $destinationPath);
         }
 
-        $this->ensureDirectoryExists(dirname($destinationPath));
-        File::copy($sourcePath, $destinationPath);
-
-        $command->info('   ✅ Migration published to database/migrations/');
+        $command->info('   ✅ Migrations published to database/migrations/');
     }
 
     /**
-     * Get the destination path for the migration file.
+     * Get all migration files from the package.
+     *
+     * @return array<int, string> List of migration file paths
      */
-    private function getMigrationDestinationPath(): string
+    private function getAllMigrationFiles(): array
     {
-        return database_path('migrations/' . $this->generateMigrationFileName());
+        $migrationDirectory = __DIR__ . '/../../database/migrations/';
+        $migrationFiles = glob($migrationDirectory . '*.php');
+
+        return $migrationFiles === false ? [] : $migrationFiles;
     }
 
     /**
-     * Get the source path for the migration file.
+     * Determine the destination path for a migration file.
+     *
+     * @param string $sourcePath Source migration file path
+     * @return string Destination path in the Laravel project
      */
-    private function getMigrationSourcePath(): string
+    private function getMigrationDestinationPath(string $sourcePath): string
     {
-        return __DIR__ . '/../../database/migrations/create_one_time_passwords_table.php';
+        $filename = basename($sourcePath);
+        return database_path('migrations/' . $filename);
     }
 
     /**
-     * Generate a unique migration file name with current timestamp.
-     */
-    private function generateMigrationFileName(): string
-    {
-        $timestamp = date('Y_m_d_His');
-
-        return "{$timestamp}_create_one_time_passwords_table.php";
-    }
-
-    /**
-     * Check if a file copy should be skipped.
-     */
-    private function shouldSkipFileCopy(string $destinationPath, bool $force): bool
-    {
-        return File::exists($destinationPath) && !$force;
-    }
-
-    /**
-     * Create a directory if it doesn't exist.
+     * Ensure a directory exists, creating it recursively if needed.
+     *
+     * @param string $directoryPath Path to the directory
      */
     private function ensureDirectoryExists(string $directoryPath): void
     {
@@ -207,13 +220,14 @@ final class OtpInstallerService
     }
 
     /**
-     * Run database migrations.
+     * Run the database migrations for the package.
+     *
+     * @param Command $command The Artisan command instance
      */
     private function handleDatabaseMigrations(Command $command): void
     {
         if ($this->hasCoreTables()) {
             $command->warn('⚠️ OTP tables already exist. Skipping migrations.');
-
             return;
         }
 
@@ -223,13 +237,17 @@ final class OtpInstallerService
             Artisan::call('migrate', ['--force' => true]);
             $command->info(Artisan::output());
             $command->info('   ✅ Migrations completed successfully.');
-        } catch (\Exception $exception) {
+        } catch (RuntimeException $exception) {
             $command->error('   ❌ Migration failed: ' . $exception->getMessage());
         }
     }
 
     /**
-     * Check if any core OTP tables already exist in the database.
+     * Check if the core database tables are present.
+     * 
+     * This method name is preserved for test compatibility.
+     *
+     * @return bool True if any core table exists in the database
      */
     private function hasCoreTables(): bool
     {
@@ -239,7 +257,7 @@ final class OtpInstallerService
                     return true;
                 }
             }
-        } catch (\Exception $exception) {
+        } catch (RuntimeException $exception) {
             return false;
         }
 
@@ -248,6 +266,8 @@ final class OtpInstallerService
 
     /**
      * Display the installation success message.
+     *
+     * @param Command $command The Artisan command instance
      */
     private function displaySuccessMessage(Command $command): void
     {
@@ -259,6 +279,8 @@ final class OtpInstallerService
 
     /**
      * Display the quick start guide with usage examples.
+     *
+     * @param Command $command The Artisan command instance
      */
     private function showQuickStartGuide(Command $command): void
     {

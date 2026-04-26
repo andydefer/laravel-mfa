@@ -2,59 +2,60 @@
 
 declare(strict_types=1);
 
-// database/migrations/2026_01_15_000001_create_one_time_passwords_table.php
+namespace YourVendor\OneTimePassword\Database\Migrations;
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Migration to create the one-time passwords table.
+ * Migration that creates the one_time_passwords table for storing OTP records.
  *
- * This table stores OTP tokens for various authentication operations,
- * with support for polymorphic relationships, multiple channels,
- * and comprehensive lifecycle tracking (verification, usage, cancellation).
+ * This table supports polymorphic relationships with any model (users, admins, etc.),
+ * tracks verification attempts, expiration timestamps, and delivery channels for
+ * one-time password management.
  */
 return new class extends Migration
 {
     /**
-     * Run the migration.
-     *
-     * Creates the 'one_time_passwords' table with all necessary columns
-     * and indexes for efficient OTP management.
+     * Run the migration and create the one_time_passwords table.
      */
     public function up(): void
     {
         Schema::create('one_time_passwords', function (Blueprint $table): void {
-            // Primary identifier
             $table->id();
 
-            // Polymorphic relationship (owner of the OTP: User, Admin, etc.)
+            // Polymorphic relationship columns (otpable_type, otpable_id)
             $table->morphs('otpable');
 
-            // Core OTP data
+            // Hashed token for security (never store raw tokens)
             $table->string('token_hash', 64);
+
+            // OTP type: 'email_verification', 'password_reset', '2fa', etc.
             $table->string('type', 50);
+
+            // Destination address: email, phone number, etc.
             $table->string('destination', 255);
 
-            // Delivery and metadata
+            // JSON array of delivery channels used (sms, email, whatsapp, etc.)
             $table->json('channels')->nullable();
+
+            // Additional metadata (IP address, user agent, etc.)
             $table->json('meta')->nullable();
 
-            // Security and attempt tracking
+            // Attempt tracking
             $table->integer('attempts')->default(0);
             $table->integer('max_attempts')->default(3);
 
-            // Lifecycle timestamps
+            // Status timestamps
             $table->timestamp('expires_at');
             $table->timestamp('verified_at')->nullable();
             $table->timestamp('used_at')->nullable();
             $table->timestamp('cancelled_at')->nullable();
 
-            // System timestamps
             $table->timestamps();
 
-            // Performance indexes
+            // Performance indexes for common queries
             $table->index('token_hash');
             $table->index('expires_at');
             $table->index('type');
@@ -63,9 +64,7 @@ return new class extends Migration
     }
 
     /**
-     * Reverse the migration.
-     *
-     * Drops the 'one_time_passwords' table if it exists.
+     * Reverse the migration and drop the one_time_passwords table.
      */
     public function down(): void
     {

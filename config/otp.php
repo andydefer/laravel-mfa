@@ -11,11 +11,60 @@ declare(strict_types=1);
  * - Default OTP settings (expiry, attempts)
  * - Automatic cleanup of expired/used OTPs
  * - Security rate limiting to prevent abuse
+ * - Localization settings for multilingual support
  *
  * All settings can be overridden via environment variables using the
  * OTP_* prefix as documented in each section.
  */
 return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Localization Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configure language preferences for OTP notifications and user-facing
+    | messages. The package ships with French and English translations.
+    |
+    */
+
+    'localization' => [
+
+        /**
+         * Default locale for OTP messages.
+         *
+         * Determines which language is used for all OTP notifications.
+         * Supported locales: 'fr' (French), 'en' (English)
+         * Override via OTP_LOCALE environment variable.
+         *
+         * @var string
+         */
+        'locale' => env('OTP_LOCALE', 'en'),
+
+        /**
+         * Supported locales available in the package.
+         *
+         * Languages that have complete translation files.
+         * Add new locales here when translations become available.
+         *
+         * @var array<int, string>
+         */
+        'supported_locales' => [
+            'fr', // French
+            'en', // English
+        ],
+
+        /**
+         * Fallback locale when translation is missing.
+         *
+         * If a translation key doesn't exist in the configured locale,
+         * the package will fall back to this locale as a last resort.
+         *
+         * @var string
+         */
+        'fallback_locale' => env('OTP_FALLBACK_LOCALE', 'en'),
+
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -138,6 +187,26 @@ return [
          * @var int
          */
         'rate_limit_decay_minutes' => env('OTP_RATE_LIMIT_DECAY_MINUTES', 60),
+
+        /**
+         * Decay time for failed verification attempts in seconds.
+         *
+         * How long to block verification attempts after a failure.
+         * Override via OTP_FAILED_VERIFICATION_DECAY_SECONDS environment variable.
+         *
+         * @var int
+         */
+        'failed_verification_decay_seconds' => env('OTP_FAILED_VERIFICATION_DECAY_SECONDS', 300),
+
+        /**
+         * Decay time for rate limit hits in seconds.
+         *
+         * How long to wait before resetting the rate limit counter.
+         * Override via OTP_RATE_LIMIT_HIT_DECAY_SECONDS environment variable.
+         *
+         * @var int
+         */
+        'rate_limit_hit_decay_seconds' => env('OTP_RATE_LIMIT_HIT_DECAY_SECONDS', 60),
 
     ],
 

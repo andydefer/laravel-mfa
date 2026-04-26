@@ -7,6 +7,10 @@ namespace Kani\Otp;
 use Illuminate\Support\ServiceProvider;
 use Kani\Otp\Commands\CleanupOtpsCommand;
 use Kani\Otp\Commands\InstallOtpCommand;
+use Kani\Otp\Contracts\CodeGeneratorInterface;
+use Kani\Otp\Contracts\RateLimiterInterface;
+use Kani\Otp\Services\DefaultCodeGenerator;
+use Kani\Otp\Services\LaravelRateLimiter;
 use Kani\Otp\Services\OtpInstallerService;
 use Kani\Otp\Services\OtpService;
 
@@ -14,19 +18,17 @@ use Kani\Otp\Services\OtpService;
  * Laravel service provider for the OTP package.
  *
  * Handles package registration, configuration merging, command registration,
- * and service container bindings. This provider is automatically discovered
- * by Laravel when the package is installed.
+ * service container bindings, and localization loading.
  */
-class OtpServiceProvider extends ServiceProvider
+final class OtpServiceProvider extends ServiceProvider
 {
     /**
      * Bootstrap any package services.
-     *
-     * Registers console commands and publishes configuration
-     * and migration files when the application is running in console mode.
      */
     public function boot(): void
     {
+        $this->loadTranslations();
+
         if ($this->app->runningInConsole()) {
             $this->registerConsoleCommands();
             $this->registerPublishableAssets();
@@ -35,15 +37,24 @@ class OtpServiceProvider extends ServiceProvider
 
     /**
      * Register any package services in the container.
-     *
-     * Merges package configuration and binds service classes
-     * as singletons for dependency injection.
      */
     public function register(): void
     {
         $this->mergePackageConfiguration();
+        $this->bindContracts();
         $this->bindOtpService();
         $this->bindOtpInstallerService();
+    }
+
+    /**
+     * Load translations from the package's Lang directory.
+     */
+    private function loadTranslations(): void
+    {
+        $this->loadTranslationsFrom(
+            path: __DIR__ . '/Lang',
+            namespace: 'otp'
+        );
     }
 
     /**
@@ -58,7 +69,7 @@ class OtpServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register the publishable assets (config and migrations).
+     * Register the publishable assets (config, migrations, translations).
      */
     private function registerPublishableAssets(): void
     {
@@ -74,6 +85,13 @@ class OtpServiceProvider extends ServiceProvider
                 $this->getMigrationsSourcePath() => $this->getMigrationsDestinationPath(),
             ],
             groups: 'otp-migrations'
+        );
+
+        $this->publishes(
+            paths: [
+                __DIR__ . '/Lang' => $this->app->langPath('vendor/otp'),
+            ],
+            groups: 'otp-translations'
         );
     }
 
@@ -121,6 +139,22 @@ class OtpServiceProvider extends ServiceProvider
     }
 
     /**
+     * Bind interfaces to their concrete implementations.
+     */
+    private function bindContracts(): void
+    {
+        $this->app->bind(
+            abstract: CodeGeneratorInterface::class,
+            concrete: DefaultCodeGenerator::class
+        );
+
+        $this->app->bind(
+            abstract: RateLimiterInterface::class,
+            concrete: LaravelRateLimiter::class
+        );
+    }
+
+    /**
      * Bind the OtpService as a singleton in the container.
      */
     private function bindOtpService(): void
@@ -129,11 +163,15 @@ class OtpServiceProvider extends ServiceProvider
             abstract: OtpService::class,
             concrete: function ($app): OtpService {
                 return new OtpService(
+                    codeGenerator: $app->make(CodeGeneratorInterface::class),
+                    rateLimiter: $app->make(RateLimiterInterface::class),
                     defaultExpiryMinutes: config('otp.default_expiry_minutes', 10),
                     defaultMaxAttempts: config('otp.default_max_attempts', 3),
                     rateLimitRequests: config('otp.security.rate_limit_requests', 3),
                     rateLimitVerifications: config('otp.security.rate_limit_verifications', 5),
-                    rateLimitDecayMinutes: config('otp.security.rate_limit_decay_minutes', 60)
+                    rateLimitDecayMinutes: config('otp.security.rate_limit_decay_minutes', 60),
+                    failedVerificationDecaySeconds: config('otp.security.failed_verification_decay_seconds', 300),
+                    rateLimitHitDecaySeconds: config('otp.security.rate_limit_hit_decay_seconds', 60)
                 );
             }
         );

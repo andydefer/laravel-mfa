@@ -13,21 +13,29 @@ use Illuminate\Support\Facades\Hash;
  *
  * This model represents an OTP token in the database, handling the complete
  * lifecycle of an OTP: creation, verification, expiration, usage, and cancellation.
- * It supports polymorphic relationships to any model (User, Admin, etc.)
- * and stores the token as a secure hash.
+ * Only the hashed token is stored; plain codes are never persisted.
+ *
+ * @property int $id
+ * @property string $otpable_type
+ * @property int $otpable_id
+ * @property string $token_hash
+ * @property string $type
+ * @property string $destination
+ * @property array|null $channels
+ * @property array|null $meta
+ * @property int $attempts
+ * @property int $max_attempts
+ * @property \Illuminate\Support\Carbon $expires_at
+ * @property \Illuminate\Support\Carbon|null $verified_at
+ * @property \Illuminate\Support\Carbon|null $used_at
+ * @property \Illuminate\Support\Carbon|null $cancelled_at
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
  */
-class OneTimePassword extends Model
+final class OneTimePassword extends Model
 {
-    /**
-     * The database table associated with the model.
-     */
     protected $table = 'one_time_passwords';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'otpable_type',
         'otpable_id',
@@ -44,11 +52,6 @@ class OneTimePassword extends Model
         'cancelled_at',
     ];
 
-    /**
-     * The attributes that should be cast to native types.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'channels' => 'array',
         'meta' => 'array',
@@ -71,7 +74,9 @@ class OneTimePassword extends Model
     }
 
     /**
-     * Check if the OTP has expired.
+     * Determine if the OTP has expired.
+     *
+     * @return bool True if the expiration timestamp is in the past
      */
     public function isExpired(): bool
     {
@@ -79,7 +84,9 @@ class OneTimePassword extends Model
     }
 
     /**
-     * Check if the OTP has been verified (code matched but not yet used).
+     * Determine if the OTP has been verified.
+     *
+     * @return bool True if the verified_at timestamp is not null
      */
     public function isVerified(): bool
     {
@@ -87,7 +94,9 @@ class OneTimePassword extends Model
     }
 
     /**
-     * Check if the OTP has been used (consumed after verification).
+     * Determine if the OTP has been used.
+     *
+     * @return bool True if the used_at timestamp is not null
      */
     public function isUsed(): bool
     {
@@ -95,7 +104,9 @@ class OneTimePassword extends Model
     }
 
     /**
-     * Check if the OTP has been cancelled (invalidated before use).
+     * Determine if the OTP has been cancelled.
+     *
+     * @return bool True if the cancelled_at timestamp is not null
      */
     public function isCancelled(): bool
     {
@@ -103,9 +114,11 @@ class OneTimePassword extends Model
     }
 
     /**
-     * Check if the OTP is still valid (not expired, verified, used, or cancelled).
+     * Determine if the OTP is currently valid for verification.
      *
-     * A valid OTP can still be verified and used.
+     * An OTP is valid when it is NOT expired, verified, used, or cancelled.
+     *
+     * @return bool True if the OTP can be verified
      */
     public function isValid(): bool
     {
@@ -117,6 +130,8 @@ class OneTimePassword extends Model
 
     /**
      * Check if the maximum number of verification attempts has been exceeded.
+     *
+     * @return bool True if attempts >= max_attempts
      */
     public function hasExceededMaxAttempts(): bool
     {
@@ -124,9 +139,10 @@ class OneTimePassword extends Model
     }
 
     /**
-     * Verify a plaintext code against the stored hash.
+     * Verify a plain text code against the stored hash.
      *
-     * @param string $plainCode The plaintext OTP code to verify
+     * @param string $plainCode The plain text code provided by the user
+     * @return bool True if the code matches the stored hash
      */
     public function verifyCode(string $plainCode): bool
     {
@@ -134,9 +150,9 @@ class OneTimePassword extends Model
     }
 
     /**
-     * Mark the OTP as verified (code successfully matched).
+     * Mark the OTP as verified by setting the verification timestamp.
      *
-     * @return $this
+     * @return self Returns the model instance for method chaining
      */
     public function markAsVerified(): self
     {
@@ -147,9 +163,12 @@ class OneTimePassword extends Model
     }
 
     /**
-     * Mark the OTP as used (consumed after verification).
+     * Mark the OTP as used by setting the usage timestamp.
      *
-     * @return $this
+     * An OTP can only be used once. This should be called after successful
+     * verification and execution of the intended action.
+     *
+     * @return self Returns the model instance for method chaining
      */
     public function markAsUsed(): self
     {
@@ -160,9 +179,12 @@ class OneTimePassword extends Model
     }
 
     /**
-     * Mark the OTP as cancelled (invalidated before use).
+     * Mark the OTP as cancelled by setting the cancellation timestamp.
      *
-     * @return $this
+     * This is useful when an OTP is invalidated before verification
+     * (e.g., user requests a new OTP, or an admin revokes it).
+     *
+     * @return self Returns the model instance for method chaining
      */
     public function markAsCancelled(): self
     {
@@ -175,7 +197,7 @@ class OneTimePassword extends Model
     /**
      * Increment the verification attempts counter.
      *
-     * @return $this
+     * @return self Returns the model instance for method chaining
      */
     public function incrementAttempts(): self
     {

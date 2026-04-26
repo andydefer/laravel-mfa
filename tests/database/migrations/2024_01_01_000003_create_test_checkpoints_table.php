@@ -7,17 +7,19 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Migration to create the test_checkpoints table for testing.
+ * Migration to create the test_checkpoints table for package testing.
  *
- * This table is used for testing checkpoint/turnstile authentication
- * with the Nemesis package.
- *
- * @package Kani\Otp\Tests\Database\Migrations
+ * This table is used exclusively by the test suite to verify checkpoint/turnstile
+ * authentication functionality. It represents a physical or logical checkpoint
+ * that requires OTP verification.
  */
 return new class extends Migration
 {
     /**
      * Run the migration.
+     *
+     * Creates the test_checkpoints table with basic checkpoint fields
+     * including location tracking, active status, and soft delete support.
      */
     public function up(): void
     {
@@ -34,6 +36,8 @@ return new class extends Migration
 
     /**
      * Reverse the migration.
+     *
+     * Drops the test_checkpoints table if it exists.
      */
     public function down(): void
     {

@@ -6,27 +6,26 @@ namespace Kani\Otp\Tests\Support;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Kani\Otp\Contracts\MustNemesis;
-use Kani\Otp\Traits\HasNemesisTokens;
+use Illuminate\Notifications\Notifiable;
+use Kani\Otp\Contracts\MustOtpChannels;
+use Kani\Otp\Traits\HasOneTimePasswords;
 
 /**
- * Test model for users that can authenticate with Nemesis tokens.
+ * Test model representing a user entity for OTP testing purposes.
  *
- * This model represents a typical User model in a Laravel application
- * and demonstrates the correct implementation of the MustNemesis interface.
- * Used for testing token authentication in a realistic context.
- *
- * @package Kani\Otp\Tests\Support
+ * This model serves as a test double for real application User models,
+ * implementing the required OTP channel configuration interface and
+ * using the HasOneTimePasswords trait. It's used exclusively in the
+ * test suite to verify OTP functionality.
  */
-final class TestUser extends Model implements MustNemesis
+final class TestUser extends Model implements MustOtpChannels
 {
-    use HasNemesisTokens;
+    use HasOneTimePasswords;
+    use Notifiable;
     use SoftDeletes;
 
     /**
-     * The table associated with the model.
-     *
-     * @var string
+     * The database table associated with the model.
      */
     protected $table = 'test_users';
 
@@ -62,23 +61,16 @@ final class TestUser extends Model implements MustNemesis
 
     /**
      * Indicates if the model should be timestamped.
-     *
-     * @var bool
      */
     public $timestamps = true;
 
     /**
-     * Define the format for authenticated API responses.
+     * Get the OTP delivery channels for this user.
      *
-     * @return array<string, mixed>
+     * @return array<int, string>
      */
-    public function nemesisFormat(): array
+    public function getOtpChannels(): array
     {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'email' => $this->email,
-            'type' => 'user',
-        ];
+        return ['mail'];
     }
 }
