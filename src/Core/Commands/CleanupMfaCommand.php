@@ -17,8 +17,6 @@ use Kani\Mfa\Totp\Models\TwoFactorSecret;
  * - OTPs that have passed their expiration date
  * - Verified/used/cancelled OTPs older than the configured retention period
  * - Disabled/expired two-factor secrets older than the configured retention period
- *
- * @package Kani\Mfa\Commands
  */
 final class CleanupMfaCommand extends Command
 {
@@ -53,7 +51,7 @@ final class CleanupMfaCommand extends Command
         $this->info('🧹 Starting MFA cleanup...');
         $this->newLine();
 
-        if (!$this->shouldProceed()) {
+        if (! $this->shouldProceed()) {
             $this->info('Cleanup cancelled.');
 
             return self::SUCCESS;
@@ -93,7 +91,7 @@ final class CleanupMfaCommand extends Command
     /**
      * Perform the MFA cleanup operations.
      *
-     * @return array<string, int> Statistics with keys: 
+     * @return array<string, int> Statistics with keys:
      *                            - expired: Number of expired OTPs deleted
      *                            - verified: Number of verified OTPs deleted
      *                            - used: Number of used OTPs deleted
@@ -114,7 +112,7 @@ final class CleanupMfaCommand extends Command
             'total' => 0,
         ];
 
-        if (!$this->option('totp-only')) {
+        if (! $this->option('totp-only')) {
             $otpStatistics = $this->cleanupOtpRecords();
             $statistics['expired'] = $otpStatistics['expired'];
             $statistics['verified'] = $otpStatistics['verified'];
@@ -122,7 +120,7 @@ final class CleanupMfaCommand extends Command
             $statistics['cancelled'] = $otpStatistics['cancelled'];
         }
 
-        if (!$this->option('otp-only')) {
+        if (! $this->option('otp-only')) {
             $totpStatistics = $this->cleanupTotpRecords();
             $statistics['totp_disabled'] = $totpStatistics['totp_disabled'];
             $statistics['totp_expired'] = $totpStatistics['totp_expired'];
@@ -149,7 +147,7 @@ final class CleanupMfaCommand extends Command
             'cancelled' => 0,
         ];
 
-        if (!$this->option('keep-expired')) {
+        if (! $this->option('keep-expired')) {
             $statistics['expired'] = $this->deleteExpiredOtps();
         } else {
             $this->warn('Keeping expired OTPs as requested (--keep-expired)');
@@ -272,8 +270,7 @@ final class CleanupMfaCommand extends Command
     /**
      * Build the query builder for verified OTPs older than cutoff date.
      *
-     * @param CarbonInterface $cutoffDate Date to compare against verified_at
-     *
+     * @param  CarbonInterface  $cutoffDate  Date to compare against verified_at
      * @return Builder<OneTimePassword>
      */
     private function buildVerifiedOtpsQuery(CarbonInterface $cutoffDate): Builder
@@ -325,8 +322,7 @@ final class CleanupMfaCommand extends Command
     /**
      * Build the query builder for used OTPs older than cutoff date.
      *
-     * @param CarbonInterface $cutoffDate Date to compare against used_at
-     *
+     * @param  CarbonInterface  $cutoffDate  Date to compare against used_at
      * @return Builder<OneTimePassword>
      */
     private function buildUsedOtpsQuery(CarbonInterface $cutoffDate): Builder
@@ -378,8 +374,7 @@ final class CleanupMfaCommand extends Command
     /**
      * Build the query builder for cancelled OTPs older than cutoff date.
      *
-     * @param CarbonInterface $cutoffDate Date to compare against cancelled_at
-     *
+     * @param  CarbonInterface  $cutoffDate  Date to compare against cancelled_at
      * @return Builder<OneTimePassword>
      */
     private function buildCancelledOtpsQuery(CarbonInterface $cutoffDate): Builder
@@ -398,8 +393,7 @@ final class CleanupMfaCommand extends Command
     /**
      * Delete disabled 2FA secrets older than the retention period.
      *
-     * @param CarbonInterface $cutoffDate Date threshold for deletion
-     *
+     * @param  CarbonInterface  $cutoffDate  Date threshold for deletion
      * @return int Number of deleted disabled secrets
      */
     private function deleteOldDisabledSecrets(CarbonInterface $cutoffDate): int
@@ -432,8 +426,7 @@ final class CleanupMfaCommand extends Command
     /**
      * Delete old confirmed/expired 2FA secrets that haven't been used.
      *
-     * @param CarbonInterface $cutoffDate Date threshold for deletion
-     *
+     * @param  CarbonInterface  $cutoffDate  Date threshold for deletion
      * @return int Number of deleted old confirmed secrets
      */
     private function deleteOldConfirmedSecrets(CarbonInterface $cutoffDate): int
@@ -488,8 +481,7 @@ final class CleanupMfaCommand extends Command
     /**
      * Calculate the cutoff date based on retention days.
      *
-     * @param int $retentionDays Number of days to subtract from current date
-     *
+     * @param  int  $retentionDays  Number of days to subtract from current date
      * @return CarbonInterface Date threshold for deletion
      */
     private function calculateCutoffDate(int $retentionDays): CarbonInterface
@@ -500,7 +492,7 @@ final class CleanupMfaCommand extends Command
     /**
      * Display the cleanup results in a formatted table.
      *
-     * @param array<string, int> $statistics Cleanup statistics
+     * @param  array<string, int>  $statistics  Cleanup statistics
      */
     private function displayResults(array $statistics): void
     {
@@ -524,18 +516,18 @@ final class CleanupMfaCommand extends Command
     /**
      * Display the statistics table.
      *
-     * @param array<string, int> $statistics Cleanup statistics
+     * @param  array<string, int>  $statistics  Cleanup statistics
      */
     private function renderStatisticsTable(array $statistics): void
     {
         $rows = [];
 
-        $this->addStatisticRowIfNeeded($rows, 'Expired OTPs deleted', $statistics['expired'], !$this->option('keep-expired') && !$this->option('totp-only'));
-        $this->addStatisticRowIfNeeded($rows, 'Verified OTPs deleted', $statistics['verified'], $statistics['verified'] > 0 && !$this->option('totp-only'));
-        $this->addStatisticRowIfNeeded($rows, 'Used OTPs deleted', $statistics['used'], $statistics['used'] > 0 && !$this->option('totp-only'));
-        $this->addStatisticRowIfNeeded($rows, 'Cancelled OTPs deleted', $statistics['cancelled'], $statistics['cancelled'] > 0 && !$this->option('totp-only'));
-        $this->addStatisticRowIfNeeded($rows, 'Disabled 2FA secrets deleted', $statistics['totp_disabled'], $statistics['totp_disabled'] > 0 && !$this->option('otp-only'));
-        $this->addStatisticRowIfNeeded($rows, 'Unused 2FA secrets deleted', $statistics['totp_expired'], $statistics['totp_expired'] > 0 && !$this->option('otp-only'));
+        $this->addStatisticRowIfNeeded($rows, 'Expired OTPs deleted', $statistics['expired'], ! $this->option('keep-expired') && ! $this->option('totp-only'));
+        $this->addStatisticRowIfNeeded($rows, 'Verified OTPs deleted', $statistics['verified'], $statistics['verified'] > 0 && ! $this->option('totp-only'));
+        $this->addStatisticRowIfNeeded($rows, 'Used OTPs deleted', $statistics['used'], $statistics['used'] > 0 && ! $this->option('totp-only'));
+        $this->addStatisticRowIfNeeded($rows, 'Cancelled OTPs deleted', $statistics['cancelled'], $statistics['cancelled'] > 0 && ! $this->option('totp-only'));
+        $this->addStatisticRowIfNeeded($rows, 'Disabled 2FA secrets deleted', $statistics['totp_disabled'], $statistics['totp_disabled'] > 0 && ! $this->option('otp-only'));
+        $this->addStatisticRowIfNeeded($rows, 'Unused 2FA secrets deleted', $statistics['totp_expired'], $statistics['totp_expired'] > 0 && ! $this->option('otp-only'));
 
         if (count($rows) > 0) {
             $rows[] = ['━━━━━━━━━━━━━━━━━━━━━', '━━━━━━━━━'];
@@ -551,10 +543,10 @@ final class CleanupMfaCommand extends Command
     /**
      * Add a statistic row to the table if the condition is met.
      *
-     * @param array<int, array<int, string>> $rows Reference to rows array
-     * @param string $label Row label
-     * @param int $value Statistic value
-     * @param bool $condition Condition to add row
+     * @param  array<int, array<int, string>>  $rows  Reference to rows array
+     * @param  string  $label  Row label
+     * @param  int  $value  Statistic value
+     * @param  bool  $condition  Condition to add row
      */
     private function addStatisticRowIfNeeded(array &$rows, string $label, int $value, bool $condition): void
     {
@@ -566,7 +558,7 @@ final class CleanupMfaCommand extends Command
     /**
      * Display the status message based on cleanup results.
      *
-     * @param array<string, int> $statistics Cleanup statistics
+     * @param  array<string, int>  $statistics  Cleanup statistics
      */
     private function renderStatusMessage(array $statistics): void
     {
@@ -576,7 +568,7 @@ final class CleanupMfaCommand extends Command
             return;
         }
 
-        if (!$this->option('dry-run')) {
+        if (! $this->option('dry-run')) {
             $this->info('✅ Cleanup completed successfully!');
         } else {
             $this->info('✅ Dry run completed successfully!');
@@ -613,7 +605,7 @@ final class CleanupMfaCommand extends Command
      */
     private function renderExpiredTokensStatus(): void
     {
-        if (!$this->option('keep-expired')) {
+        if (! $this->option('keep-expired')) {
             $this->line('   • Expired OTPs: ✅ Removed');
         } else {
             $this->line('   • Expired OTPs: ⏸️  Kept (--keep-expired flag used)');

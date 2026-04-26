@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Kani\Mfa\Tests\Feature\Traits;
 
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Kani\Mfa\Tests\TestCase;
 use Kani\Mfa\Tests\Support\TestUser;
+use Kani\Mfa\Tests\TestCase;
 use Kani\Mfa\Totp\Models\TwoFactorSecret;
 use Kani\Mfa\Totp\Services\TOTPService;
 
@@ -15,15 +16,15 @@ use Kani\Mfa\Totp\Services\TOTPService;
  *
  * Validates 2FA operations including enabling/disabling,
  * code verification, recovery codes, and QR code generation.
- *
- * @package Kani\Mfa\Tests\Feature\Traits
  */
 final class HasTwoFactorAuthenticationTest extends TestCase
 {
     use RefreshDatabase;
 
     private TestUser $user;
+
     private TOTPService $totpService;
+
     private string $testSecret;
 
     /**
@@ -40,7 +41,7 @@ final class HasTwoFactorAuthenticationTest extends TestCase
         ]);
 
         // Arrange: Create TOTP service
-        $this->totpService = new TOTPService();
+        $this->totpService = new TOTPService;
 
         // Arrange: Generate a test secret
         $this->testSecret = $this->totpService->generateSecret();
@@ -65,7 +66,7 @@ final class HasTwoFactorAuthenticationTest extends TestCase
         $relation = $this->user->twoFactorSecret();
 
         // Assert: Relation is morphOne
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\MorphOne::class, $relation);
+        $this->assertInstanceOf(MorphOne::class, $relation);
 
         // Assert: Can retrieve the secret
         $retrievedSecret = $this->user->twoFactorSecret;

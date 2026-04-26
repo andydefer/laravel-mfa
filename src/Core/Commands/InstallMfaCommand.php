@@ -12,8 +12,6 @@ use Kani\Mfa\Core\Services\MfaInstallerService;
  *
  * By default installs both OTP and TOTP (2FA) systems.
  * Users can choose to skip specific components using the available options.
- *
- * @package Kani\Mfa\Commands
  */
 final class InstallMfaCommand extends Command
 {
@@ -38,7 +36,7 @@ final class InstallMfaCommand extends Command
     /**
      * Execute the console command to install the package.
      *
-     * @param MfaInstallerService $installer Service that handles the installation logic
+     * @param  MfaInstallerService  $installer  Service that handles the installation logic
      * @return int Command exit code (0 for success)
      */
     public function handle(MfaInstallerService $installer): int

@@ -8,9 +8,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Kani\Mfa\Otp\Models\OneTimePassword;
 use Kani\Mfa\Otp\Notifications\OtpNotification;
-use Kani\Mfa\Tests\TestCase;
 use Kani\Mfa\Tests\Support\TestCheckPoint;
 use Kani\Mfa\Tests\Support\TestUser;
+use Kani\Mfa\Tests\TestCase;
 
 /**
  * Test suite for the OtpNotification class.
@@ -24,7 +24,9 @@ final class OtpNotificationTest extends TestCase
     use RefreshDatabase;
 
     private OneTimePassword $otp;
+
     private string $plainCode;
+
     private TestUser $testUser;
 
     /**
@@ -135,7 +137,8 @@ final class OtpNotificationTest extends TestCase
         // Arrange: Create a notifiable without MustOtpChannels interface
         $this->otp->update(['channels' => null]);
 
-        $plainNotifiable = new class {
+        $plainNotifiable = new class
+        {
             public string $email = 'test@example.com';
         };
 
@@ -217,7 +220,8 @@ final class OtpNotificationTest extends TestCase
         // Arrange: Set English locale (nouvelle structure)
         config()->set('mfa.otp.localization.locale', 'en');
 
-        $notifiableWithoutNameOrEmail = new class {
+        $notifiableWithoutNameOrEmail = new class
+        {
             // No name, no email property
         };
 
@@ -239,7 +243,8 @@ final class OtpNotificationTest extends TestCase
         config()->set('mfa.otp.localization.fallback_locale', 'en');
         config()->set('mfa.otp.localization.supported_locales', ['fr', 'en']);
 
-        $notifiableWithoutNameOrEmail = new class {
+        $notifiableWithoutNameOrEmail = new class
+        {
             // No name, no email property
         };
 
@@ -259,7 +264,8 @@ final class OtpNotificationTest extends TestCase
         // Arrange: Set English locale (nouvelle structure)
         config()->set('mfa.otp.localization.locale', 'en');
 
-        $plainNotifiable = new class {
+        $plainNotifiable = new class
+        {
             public string $email = 'test@example.com';
         };
 
@@ -281,7 +287,8 @@ final class OtpNotificationTest extends TestCase
         config()->set('mfa.otp.localization.fallback_locale', 'en');
         config()->set('mfa.otp.localization.supported_locales', ['fr', 'en']);
 
-        $plainNotifiable = new class {
+        $plainNotifiable = new class
+        {
             public string $email = 'test@example.com';
         };
 

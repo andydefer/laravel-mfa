@@ -12,8 +12,6 @@ use Illuminate\Support\Facades\Schema;
  * This table stores TOTP secrets for two-factor authentication,
  * supporting polymorphic relationships with any authenticatable model
  * (User, Admin, etc.) and includes recovery codes for account recovery.
- *
- * @package Kani\Mfa\Database\Migrations
  */
 return new class extends Migration
 {

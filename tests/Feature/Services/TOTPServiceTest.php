@@ -6,20 +6,19 @@ namespace Kani\Mfa\Tests\Feature\Services;
 
 use Kani\Mfa\Tests\TestCase;
 use Kani\Mfa\Totp\Services\TOTPService;
+use OTPHP\Exception\SecretDecodingException;
 use ParagonIE\ConstantTime\Base32;
-use OTPHP\TOTP as OTPHPTOTP;
 
 /**
  * Test suite for TOTPService core functionality.
  *
  * Validates TOTP operations including secret generation,
  * code verification, current code generation, and edge cases.
- *
- * @package Kani\Mfa\Tests\Feature\Services
  */
 final class TOTPServiceTest extends TestCase
 {
     private TOTPService $totpService;
+
     private string $testSecret;
 
     /**
@@ -63,7 +62,7 @@ final class TOTPServiceTest extends TestCase
             $this->assertIsString($decoded);
             $this->assertEquals(20, strlen($decoded)); // 20 bytes = 160 bits
         } catch (\Exception $e) {
-            $this->fail('Secret should be valid Base32: ' . $e->getMessage());
+            $this->fail('Secret should be valid Base32: '.$e->getMessage());
         }
     }
 
@@ -328,7 +327,7 @@ final class TOTPServiceTest extends TestCase
         $code = '123456';
 
         // Expect an exception to be thrown
-        $this->expectException(\OTPHP\Exception\SecretDecodingException::class);
+        $this->expectException(SecretDecodingException::class);
 
         // Act: Try to verify with an invalid Base32 secret
         $this->totpService->verify($invalidSecret, $code);
@@ -340,7 +339,7 @@ final class TOTPServiceTest extends TestCase
     public function test_can_be_instantiated_with_default_parameters(): void
     {
         // Act: Create service with no parameters
-        $service = new TOTPService();
+        $service = new TOTPService;
 
         // Arrange: Generate secret and code
         $secret = $service->generateSecret();
@@ -528,7 +527,7 @@ final class TOTPServiceTest extends TestCase
     public function test_verify_with_timestamp_parameter(): void
     {
         // Arrange: Create service and secret
-        $service = new TOTPService();
+        $service = new TOTPService;
         $secret = $service->generateSecret();
 
         $timestamp = 100000;

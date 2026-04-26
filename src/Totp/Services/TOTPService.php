@@ -1,4 +1,5 @@
 <?php
+
 // src/Totp/Services/TOTPService.php
 
 declare(strict_types=1);
@@ -13,18 +14,16 @@ use ParagonIE\ConstantTime\Base32;
  *
  * Handles secret generation, code verification, and provisioning URI creation
  * for two-factor authentication using Google Authenticator or compatible apps.
- *
- * @package Kani\Mfa\Totp\Services
  */
 class TOTPService
 {
     /**
      * Create a new TOTPService instance.
      *
-     * @param int $period Time period in seconds for each code (default: 30)
-     * @param int $digits Number of digits in the code (default: 6)
-     * @param string $algorithm Hashing algorithm (sha1, sha256, sha512)
-     * @param int $window Number of time periods to check (default: 1)
+     * @param  int  $period  Time period in seconds for each code (default: 30)
+     * @param  int  $digits  Number of digits in the code (default: 6)
+     * @param  string  $algorithm  Hashing algorithm (sha1, sha256, sha512)
+     * @param  int  $window  Number of time periods to check (default: 1)
      */
     public function __construct(
         private readonly int $period = 30,
@@ -49,8 +48,7 @@ class TOTPService
     /**
      * Create an OTPHP TOTP instance.
      *
-     * @param string $secret The shared secret
-     * @return OTPHPTOTP
+     * @param  string  $secret  The shared secret
      */
     private function createTOTP(string $secret): OTPHPTOTP
     {
@@ -65,10 +63,10 @@ class TOTPService
     /**
      * Verify a TOTP code against the shared secret.
      *
-     * @param string $secret The shared secret stored for the user
-     * @param string $code The 6-digit code from the authenticator app
-     * @param int|null $window Number of time periods to check (uses default if null)
-     * @param int|null $timestamp Optional timestamp to verify against (useful for testing)
+     * @param  string  $secret  The shared secret stored for the user
+     * @param  string  $code  The 6-digit code from the authenticator app
+     * @param  int|null  $window  Number of time periods to check (uses default if null)
+     * @param  int|null  $timestamp  Optional timestamp to verify against (useful for testing)
      * @return bool True if the code is valid
      */
     public function verify(string $secret, string $code, ?int $window = null, ?int $timestamp = null): bool
@@ -107,8 +105,8 @@ class TOTPService
     /**
      * Get the current TOTP code for testing purposes.
      *
-     * @param string $secret The shared secret
-     * @param int|null $timestamp Optional timestamp to generate code for (useful for testing)
+     * @param  string  $secret  The shared secret
+     * @param  int|null  $timestamp  Optional timestamp to generate code for (useful for testing)
      * @return string The current 6-digit code
      */
     public function now(string $secret, ?int $timestamp = null): string

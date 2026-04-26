@@ -1,4 +1,5 @@
 <?php
+
 // tests/Feature/Models/TwoFactorSecretTest.php
 
 declare(strict_types=1);
@@ -6,9 +7,10 @@ declare(strict_types=1);
 namespace Kani\Mfa\Tests\Feature\Models;
 
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Kani\Mfa\Tests\TestCase;
 use Kani\Mfa\Tests\Support\TestUser;
+use Kani\Mfa\Tests\TestCase;
 use Kani\Mfa\Totp\Models\TwoFactorSecret;
 use Kani\Mfa\Totp\Services\TOTPService;
 
@@ -18,15 +20,15 @@ use Kani\Mfa\Totp\Services\TOTPService;
  * Validates all model functionality including TOTP secret management,
  * recovery codes generation/verification, QR code provisioning,
  * and polymorphic relationships.
- *
- * @package Kani\Mfa\Tests\Feature\Models
  */
 final class TwoFactorSecretTest extends TestCase
 {
     use RefreshDatabase;
 
     private TestUser $testUser;
+
     private TwoFactorSecret $twoFactorSecret;
+
     private string $testSecret;
 
     /**
@@ -110,14 +112,14 @@ final class TwoFactorSecretTest extends TestCase
 
         // confirmed_at and last_used_at can be null initially
         $this->assertTrue($this->twoFactorSecret->confirmed_at === null ||
-            $this->twoFactorSecret->confirmed_at instanceof \Carbon\CarbonInterface);
+            $this->twoFactorSecret->confirmed_at instanceof CarbonInterface);
         $this->assertTrue($this->twoFactorSecret->last_used_at === null ||
-            $this->twoFactorSecret->last_used_at instanceof \Carbon\CarbonInterface);
+            $this->twoFactorSecret->last_used_at instanceof CarbonInterface);
 
         // created_at and updated_at are Carbon instances by default in Laravel
         // They can be Carbon or CarbonImmutable depending on configuration
-        $this->assertInstanceOf(\Carbon\CarbonInterface::class, $this->twoFactorSecret->created_at);
-        $this->assertInstanceOf(\Carbon\CarbonInterface::class, $this->twoFactorSecret->updated_at);
+        $this->assertInstanceOf(CarbonInterface::class, $this->twoFactorSecret->created_at);
+        $this->assertInstanceOf(CarbonInterface::class, $this->twoFactorSecret->updated_at);
 
         // recovery_codes can be null or array
         $this->assertTrue($this->twoFactorSecret->recovery_codes === null ||
@@ -159,7 +161,7 @@ final class TwoFactorSecretTest extends TestCase
         $this->assertTrue($this->twoFactorSecret->isEnabled());
         $this->assertNotNull($this->twoFactorSecret->confirmed_at);
         // Use CarbonInterface instead of CarbonImmutable to support both Carbon and CarbonImmutable
-        $this->assertInstanceOf(\Carbon\CarbonInterface::class, $this->twoFactorSecret->confirmed_at);
+        $this->assertInstanceOf(CarbonInterface::class, $this->twoFactorSecret->confirmed_at);
     }
 
     /**
@@ -210,7 +212,7 @@ final class TwoFactorSecretTest extends TestCase
         $uri = $secret->getProvisioningUri();
 
         // Assert
-        $this->assertStringContainsString('issuer=' . rawurlencode(config('app.name')), $uri);
+        $this->assertStringContainsString('issuer='.rawurlencode(config('app.name')), $uri);
         $this->assertStringContainsString((string) $this->testUser->getKey(), $uri);
     }
 
@@ -472,7 +474,7 @@ final class TwoFactorSecretTest extends TestCase
 
         // Assert
         $this->assertNotNull($this->twoFactorSecret->confirmed_at);
-        $this->assertInstanceOf(\Carbon\CarbonInterface::class, $this->twoFactorSecret->confirmed_at);
+        $this->assertInstanceOf(CarbonInterface::class, $this->twoFactorSecret->confirmed_at);
     }
 
     /**
@@ -488,6 +490,6 @@ final class TwoFactorSecretTest extends TestCase
 
         // Assert
         $this->assertNotNull($this->twoFactorSecret->refresh()->last_used_at);
-        $this->assertInstanceOf(\Carbon\CarbonInterface::class, $this->twoFactorSecret->last_used_at);
+        $this->assertInstanceOf(CarbonInterface::class, $this->twoFactorSecret->last_used_at);
     }
 }

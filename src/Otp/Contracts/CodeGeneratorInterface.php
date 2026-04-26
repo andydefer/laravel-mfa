@@ -1,4 +1,5 @@
 <?php
+
 // src/Otp/Contracts/CodeGeneratorInterface.php
 
 declare(strict_types=1);

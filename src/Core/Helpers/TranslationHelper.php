@@ -23,14 +23,13 @@ final class TranslationHelper
      * package-specific translations independently of the main application's
      * language settings.
      *
-     * @param string $key Translation key in format 'file.key' (e.g., 'messages.subject')
-     * @param array<string, mixed> $replace Placeholder values for translation interpolation
+     * @param  string  $key  Translation key in format 'file.key' (e.g., 'messages.subject')
+     * @param  array<string, mixed>  $replace  Placeholder values for translation interpolation
      * @return string Translated message with placeholders replaced
      *
      * @example
      * // Returns "Two-factor authentication code"
      * TranslationHelper::trans('messages.2fa_code');
-     *
      * @example
      * // Returns "Please enter your verification code"
      * TranslationHelper::trans('messages.enter_code', ['code' => '123456']);
@@ -104,8 +103,8 @@ final class TranslationHelper
     /**
      * Validates whether a given locale is in the list of supported locales.
      *
-     * @param string $locale Locale code to validate
-     * @param array<int, string> $supportedLocales List of allowed locale codes
+     * @param  string  $locale  Locale code to validate
+     * @param  array<int, string>  $supportedLocales  List of allowed locale codes
      * @return bool True if locale is supported, false otherwise
      */
     private static function isLocaleSupported(string $locale, array $supportedLocales): bool

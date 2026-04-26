@@ -1,10 +1,13 @@
 <?php
+
 // src/Totp/Traits/HasTwoFactorAuthentication.php
 
 declare(strict_types=1);
 
 namespace Kani\Mfa\Totp\Traits;
 
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Kani\Mfa\Totp\Models\TwoFactorSecret;
 use Kani\Mfa\Totp\Services\TOTPService;
 
@@ -17,14 +20,14 @@ use Kani\Mfa\Totp\Services\TOTPService;
  * - Recovery code generation and verification
  * - Automatic handling of the polymorphic relationship
  *
- * @mixin \Illuminate\Database\Eloquent\Model
+ * @mixin Model
  */
 trait HasTwoFactorAuthentication
 {
     /**
      * Define the polymorphic relationship with the two-factor secret.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\MorphOne
+     * @return MorphOne
      */
     public function twoFactorSecret()
     {
@@ -35,8 +38,6 @@ trait HasTwoFactorAuthentication
      * Get or create the TOTP secret for this model.
      *
      * If no secret exists, a new one is generated automatically.
-     *
-     * @return TwoFactorSecret
      */
     public function getTwoFactorSecret(): TwoFactorSecret
     {
@@ -67,8 +68,6 @@ trait HasTwoFactorAuthentication
 
     /**
      * Check if two-factor authentication is enabled for this model.
-     *
-     * @return bool
      */
     public function isTwoFactorEnabled(): bool
     {
@@ -83,7 +82,7 @@ trait HasTwoFactorAuthentication
     /**
      * Enable two-factor authentication after verifying the TOTP code.
      *
-     * @param string $code The 6-digit code from Google Authenticator
+     * @param  string  $code  The 6-digit code from Google Authenticator
      * @return bool True if the code was valid and 2FA was enabled
      */
     public function enableTwoFactor(string $code): bool
@@ -96,6 +95,7 @@ trait HasTwoFactorAuthentication
         }
 
         $secret->enable();
+
         return true;
     }
 
@@ -111,6 +111,7 @@ trait HasTwoFactorAuthentication
         }
 
         $this->twoFactorSecret->disable();
+
         return true;
     }
 
@@ -120,7 +121,7 @@ trait HasTwoFactorAuthentication
      * If 2FA is not enabled, this method always returns true.
      * The verification timestamp is updated on successful TOTP verification.
      *
-     * @param string $code The 6-digit code or recovery code
+     * @param  string  $code  The 6-digit code or recovery code
      * @return bool True if the code is valid
      */
     public function verifyTwoFactorCode(string $code): bool
@@ -134,6 +135,7 @@ trait HasTwoFactorAuthentication
         // Verify TOTP code
         if ($secret->verifyCode($code)) {
             $secret->update(['last_used_at' => now()]);
+
             return true;
         }
 
@@ -150,8 +152,6 @@ trait HasTwoFactorAuthentication
      *
      * This URI can be used to generate a QR code that the user scans
      * with Google Authenticator or any compatible app.
-     *
-     * @return string
      */
     public function getTwoFactorQrCodeUri(): string
     {
@@ -163,8 +163,6 @@ trait HasTwoFactorAuthentication
      *
      * This should be used after enabling 2FA or when the user requests
      * new recovery codes. Returns the plain text codes (show once).
-     *
-     * @return array
      */
     public function generateRecoveryCodes(): array
     {
@@ -173,8 +171,6 @@ trait HasTwoFactorAuthentication
 
     /**
      * Get the hashed recovery codes (for debugging only).
-     *
-     * @return array
      */
     public function getRecoveryCodes(): array
     {

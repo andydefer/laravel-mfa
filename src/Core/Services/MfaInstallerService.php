@@ -16,8 +16,6 @@ use RuntimeException;
  * Handles the complete installation process including publishing configuration
  * files, migrations, and running database migrations.
  * By default installs both OTP and TOTP components.
- *
- * @package Kani\Mfa\Services
  */
 class MfaInstallerService
 {
@@ -42,24 +40,24 @@ class MfaInstallerService
     /**
      * Execute the complete package installation.
      *
-     * @param Command $command The Artisan command instance for console output
-     * @param bool $force Whether to overwrite existing files without confirmation
-     * @param bool $skipMigrations Whether to skip running database migrations
-     * @param bool $includeOtp Whether to install OTP (default: true)
-     * @param bool $includeTotp Whether to install TOTP (default: true)
+     * @param  Command  $command  The Artisan command instance for console output
+     * @param  bool  $force  Whether to overwrite existing files without confirmation
+     * @param  bool  $skipMigrations  Whether to skip running database migrations
+     * @param  bool  $includeOtp  Whether to install OTP (default: true)
+     * @param  bool  $includeTotp  Whether to install TOTP (default: true)
      */
     public function install(Command $command, bool $force = false, bool $skipMigrations = false, bool $includeOtp = true, bool $includeTotp = true): void
     {
         $this->displayWelcomeMessage($command);
 
-        if (!$this->shouldProceedWithInstallation($command, $force, $includeOtp, $includeTotp)) {
+        if (! $this->shouldProceedWithInstallation($command, $force, $includeOtp, $includeTotp)) {
             return;
         }
 
         $this->publishConfiguration($command, $force);
         $this->publishMigrations($command, $force, $includeOtp, $includeTotp);
 
-        if (!$skipMigrations) {
+        if (! $skipMigrations) {
             $this->handleDatabaseMigrations($command, $includeOtp, $includeTotp);
         }
 
@@ -70,7 +68,7 @@ class MfaInstallerService
     /**
      * Display the package installation welcome message.
      *
-     * @param Command $command The console command for output
+     * @param  Command  $command  The console command for output
      */
     private function displayWelcomeMessage(Command $command): void
     {
@@ -81,10 +79,10 @@ class MfaInstallerService
     /**
      * Determine if installation should proceed based on current state and user confirmation.
      *
-     * @param Command $command The console command for output and input
-     * @param bool $force Whether to skip confirmation prompts
-     * @param bool $includeOtp Whether OTP is being installed
-     * @param bool $includeTotp Whether TOTP is being installed
+     * @param  Command  $command  The console command for output and input
+     * @param  bool  $force  Whether to skip confirmation prompts
+     * @param  bool  $includeOtp  Whether OTP is being installed
+     * @param  bool  $includeTotp  Whether TOTP is being installed
      * @return bool True if installation should proceed, false otherwise
      */
     private function shouldProceedWithInstallation(Command $command, bool $force, bool $includeOtp, bool $includeTotp): bool
@@ -96,16 +94,18 @@ class MfaInstallerService
         if ($this->isAlreadyInstalled($includeOtp, $includeTotp)) {
             $command->warn('⚠️ MFA package appears to be already installed.');
 
-            if (!$command->confirm('Do you want to reinstall? This may overwrite existing files.', false)) {
+            if (! $command->confirm('Do you want to reinstall? This may overwrite existing files.', false)) {
                 $command->info('Installation cancelled.');
+
                 return false;
             }
         }
 
         $this->displayInstallationPlan($command, $includeOtp, $includeTotp);
 
-        if (!$command->confirm('Continue with installation?', true)) {
+        if (! $command->confirm('Continue with installation?', true)) {
             $command->info('Installation cancelled.');
+
             return false;
         }
 
@@ -115,9 +115,9 @@ class MfaInstallerService
     /**
      * Display the installation plan showing what files will be published.
      *
-     * @param Command $command The console command for output
-     * @param bool $includeOtp Whether OTP is being installed
-     * @param bool $includeTotp Whether TOTP is being installed
+     * @param  Command  $command  The console command for output
+     * @param  bool  $includeOtp  Whether OTP is being installed
+     * @param  bool  $includeTotp  Whether TOTP is being installed
      */
     private function displayInstallationPlan(Command $command, bool $includeOtp, bool $includeTotp): void
     {
@@ -138,8 +138,8 @@ class MfaInstallerService
     /**
      * Check if the package has already been installed.
      *
-     * @param bool $includeOtp Whether to check OTP tables
-     * @param bool $includeTotp Whether to check TOTP tables
+     * @param  bool  $includeOtp  Whether to check OTP tables
+     * @param  bool  $includeTotp  Whether to check TOTP tables
      * @return bool True if configuration exists or required tables are present
      */
     private function isAlreadyInstalled(bool $includeOtp, bool $includeTotp): bool
@@ -164,8 +164,8 @@ class MfaInstallerService
     /**
      * Publish the package configuration file to the Laravel config directory.
      *
-     * @param Command $command The console command for output
-     * @param bool $force Whether to overwrite existing configuration file
+     * @param  Command  $command  The console command for output
+     * @param  bool  $force  Whether to overwrite existing configuration file
      */
     private function publishConfiguration(Command $command, bool $force): void
     {
@@ -176,8 +176,9 @@ class MfaInstallerService
 
         $this->ensureDirectoryExists(dirname($destinationPath));
 
-        if (File::exists($destinationPath) && !$force) {
+        if (File::exists($destinationPath) && ! $force) {
             $command->warn('   Config file already exists. Use --force to overwrite.');
+
             return;
         }
 
@@ -192,16 +193,16 @@ class MfaInstallerService
      */
     private function getConfigSourcePath(): string
     {
-        return __DIR__ . '/../../../config/mfa.php';
+        return __DIR__.'/../../../config/mfa.php';
     }
 
     /**
      * Publish all package migration files to the Laravel migrations directory.
      *
-     * @param Command $command The console command for output
-     * @param bool $force Whether to overwrite existing migration files
-     * @param bool $includeOtp Whether to include OTP migrations
-     * @param bool $includeTotp Whether to include TOTP migrations
+     * @param  Command  $command  The console command for output
+     * @param  bool  $force  Whether to overwrite existing migration files
+     * @param  bool  $includeOtp  Whether to include OTP migrations
+     * @param  bool  $includeTotp  Whether to include TOTP migrations
      */
     private function publishMigrations(Command $command, bool $force, bool $includeOtp, bool $includeTotp): void
     {
@@ -212,8 +213,9 @@ class MfaInstallerService
         foreach ($migrationFiles as $sourcePath) {
             $destinationPath = $this->getMigrationDestinationPath($sourcePath);
 
-            if (File::exists($destinationPath) && !$force) {
-                $command->warn("   Migration " . basename($sourcePath) . " already exists. Use --force to overwrite.");
+            if (File::exists($destinationPath) && ! $force) {
+                $command->warn('   Migration '.basename($sourcePath).' already exists. Use --force to overwrite.');
+
                 continue;
             }
 
@@ -227,19 +229,19 @@ class MfaInstallerService
     /**
      * Get all migration files from the package's migration directory.
      *
-     * @param bool $includeOtp If false, excludes OTP migration files
-     * @param bool $includeTotp If false, excludes TOTP migration files
+     * @param  bool  $includeOtp  If false, excludes OTP migration files
+     * @param  bool  $includeTotp  If false, excludes TOTP migration files
      * @return array<int, string> List of migration file paths
      */
     private function getAllMigrationFiles(bool $includeOtp, bool $includeTotp): array
     {
-        $migrationDirectory = __DIR__ . '/../../database/migrations/';
+        $migrationDirectory = __DIR__.'/../../database/migrations/';
 
-        if (!is_dir($migrationDirectory)) {
+        if (! is_dir($migrationDirectory)) {
             return [];
         }
 
-        $files = glob($migrationDirectory . '*.php');
+        $files = glob($migrationDirectory.'*.php');
 
         if ($files === false) {
             return [];
@@ -249,11 +251,11 @@ class MfaInstallerService
             $isOtpMigration = str_contains($file, 'one_time_passwords');
             $isTotpMigration = str_contains($file, 'two_factor_secrets');
 
-            if ($isOtpMigration && !$includeOtp) {
+            if ($isOtpMigration && ! $includeOtp) {
                 return false;
             }
 
-            if ($isTotpMigration && !$includeTotp) {
+            if ($isTotpMigration && ! $includeTotp) {
                 return false;
             }
 
@@ -266,23 +268,24 @@ class MfaInstallerService
     /**
      * Determine the destination path for a migration file in the Laravel project.
      *
-     * @param string $sourcePath Source migration file path
+     * @param  string  $sourcePath  Source migration file path
      * @return string Destination path in database/migrations directory
      */
     private function getMigrationDestinationPath(string $sourcePath): string
     {
         $filename = basename($sourcePath);
-        return database_path('migrations/' . $filename);
+
+        return database_path('migrations/'.$filename);
     }
 
     /**
      * Ensure a directory exists, creating it recursively with proper permissions.
      *
-     * @param string $directoryPath Path to the directory to create
+     * @param  string  $directoryPath  Path to the directory to create
      */
     private function ensureDirectoryExists(string $directoryPath): void
     {
-        if (!File::exists($directoryPath)) {
+        if (! File::exists($directoryPath)) {
             File::makeDirectory($directoryPath, 0755, true);
         }
     }
@@ -290,9 +293,9 @@ class MfaInstallerService
     /**
      * Run the database migrations for the package.
      *
-     * @param Command $command The console command for output
-     * @param bool $includeOtp Whether OTP tables should be checked for existence
-     * @param bool $includeTotp Whether TOTP tables should be checked for existence
+     * @param  Command  $command  The console command for output
+     * @param  bool  $includeOtp  Whether OTP tables should be checked for existence
+     * @param  bool  $includeTotp  Whether TOTP tables should be checked for existence
      */
     private function handleDatabaseMigrations(Command $command, bool $includeOtp, bool $includeTotp): void
     {
@@ -308,8 +311,9 @@ class MfaInstallerService
             $hasExistingTables = true;
         }
 
-        if ($hasExistingTables && !$command->confirm('Tables already exist. Continue with migrations for missing tables?', true)) {
+        if ($hasExistingTables && ! $command->confirm('Tables already exist. Continue with migrations for missing tables?', true)) {
             $command->info('Migrations skipped.');
+
             return;
         }
 
@@ -320,7 +324,7 @@ class MfaInstallerService
             $command->info(Artisan::output());
             $command->info('   ✅ Migrations completed successfully.');
         } catch (RuntimeException $exception) {
-            $command->error('   ❌ Migration failed: ' . $exception->getMessage());
+            $command->error('   ❌ Migration failed: '.$exception->getMessage());
         }
     }
 
@@ -369,7 +373,7 @@ class MfaInstallerService
     /**
      * Display the installation success message with visual separator.
      *
-     * @param Command $command The console command for output
+     * @param  Command  $command  The console command for output
      */
     private function displaySuccessMessage(Command $command): void
     {
@@ -382,9 +386,9 @@ class MfaInstallerService
     /**
      * Display the quick start guide with usage examples for developers.
      *
-     * @param Command $command The console command for output
-     * @param bool $includeOtp Whether OTP was installed
-     * @param bool $includeTotp Whether TOTP was installed
+     * @param  Command  $command  The console command for output
+     * @param  bool  $includeOtp  Whether OTP was installed
+     * @param  bool  $includeTotp  Whether TOTP was installed
      */
     private function showQuickStartGuide(Command $command, bool $includeOtp, bool $includeTotp): void
     {

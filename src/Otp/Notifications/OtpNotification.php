@@ -27,8 +27,8 @@ final class OtpNotification extends Notification
     /**
      * Create a new OTP notification instance.
      *
-     * @param OneTimePassword $otp The OTP model instance containing metadata
-     * @param string $plainCode The plain text OTP code (not stored in DB)
+     * @param  OneTimePassword  $otp  The OTP model instance containing metadata
+     * @param  string  $plainCode  The plain text OTP code (not stored in DB)
      */
     public function __construct(
         private readonly OneTimePassword $otp,
@@ -43,7 +43,7 @@ final class OtpNotification extends Notification
      * 2. Channels defined by notifiable via MustOtpChannels contract
      * 3. Default ['mail'] channel
      *
-     * @param mixed $notifiable The entity receiving the notification
+     * @param  mixed  $notifiable  The entity receiving the notification
      * @return array<int, string> List of delivery channels
      */
     public function via($notifiable): array
@@ -64,7 +64,7 @@ final class OtpNotification extends Notification
     /**
      * Build the mail message for OTP delivery.
      *
-     * @param mixed $notifiable The entity receiving the notification
+     * @param  mixed  $notifiable  The entity receiving the notification
      * @return MailMessage The configured email message
      */
     public function toMail($notifiable): MailMessage
@@ -94,7 +94,7 @@ final class OtpNotification extends Notification
     {
         $channels = $this->otp->channels;
 
-        if ($channels === null || !is_array($channels) || empty($channels)) {
+        if ($channels === null || ! is_array($channels) || empty($channels)) {
             return null;
         }
 
@@ -104,7 +104,7 @@ final class OtpNotification extends Notification
     /**
      * Build the personalized greeting for the notification.
      *
-     * @param mixed $notifiable The entity receiving the notification
+     * @param  mixed  $notifiable  The entity receiving the notification
      * @return string Personalized greeting
      */
     private function buildGreeting($notifiable): string
@@ -118,7 +118,7 @@ final class OtpNotification extends Notification
     /**
      * Extract a human-readable name from the notifiable entity.
      *
-     * @param mixed $notifiable The entity receiving the notification
+     * @param  mixed  $notifiable  The entity receiving the notification
      * @return string User's name, email, or fallback
      */
     private function extractNotifiableName($notifiable): string

@@ -20,8 +20,8 @@ final class LaravelRateLimiter implements RateLimiterInterface
     /**
      * Check if the rate limit has been exceeded for a given key.
      *
-     * @param string $key Unique identifier for the rate-limited action
-     * @param int $maxAttempts Maximum number of attempts allowed
+     * @param  string  $key  Unique identifier for the rate-limited action
+     * @param  int  $maxAttempts  Maximum number of attempts allowed
      * @return bool True if the maximum attempts have been exceeded
      */
     public function isExceeded(string $key, int $maxAttempts): bool
@@ -38,8 +38,8 @@ final class LaravelRateLimiter implements RateLimiterInterface
      * Increases the attempt counter for the key and sets the expiration
      * time for the rate limit window.
      *
-     * @param string $key Unique identifier for the rate-limited action
-     * @param int $decaySeconds Number of seconds until the hit decays
+     * @param  string  $key  Unique identifier for the rate-limited action
+     * @param  int  $decaySeconds  Number of seconds until the hit decays
      */
     public function hit(string $key, int $decaySeconds): void
     {
@@ -55,7 +55,7 @@ final class LaravelRateLimiter implements RateLimiterInterface
      * Useful for informing clients how long they need to wait before
      * attempting the action again.
      *
-     * @param string $key Unique identifier for the rate-limited action
+     * @param  string  $key  Unique identifier for the rate-limited action
      * @return int Number of seconds remaining until the limit resets
      */
     public function getAvailableInSeconds(string $key): int
@@ -71,7 +71,7 @@ final class LaravelRateLimiter implements RateLimiterInterface
      * Resets the attempt counter and removes any stored data for the key,
      * effectively removing all rate limits for that identifier.
      *
-     * @param string $key Unique identifier for the rate-limited action
+     * @param  string  $key  Unique identifier for the rate-limited action
      */
     public function clear(string $key): void
     {

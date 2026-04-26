@@ -6,6 +6,7 @@ namespace Kani\Mfa\Otp\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -25,12 +26,12 @@ use Illuminate\Support\Facades\Hash;
  * @property array|null $meta
  * @property int $attempts
  * @property int $max_attempts
- * @property \Illuminate\Support\Carbon $expires_at
- * @property \Illuminate\Support\Carbon|null $verified_at
- * @property \Illuminate\Support\Carbon|null $used_at
- * @property \Illuminate\Support\Carbon|null $cancelled_at
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon $expires_at
+ * @property Carbon|null $verified_at
+ * @property Carbon|null $used_at
+ * @property Carbon|null $cancelled_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 final class OneTimePassword extends Model
 {
@@ -65,8 +66,6 @@ final class OneTimePassword extends Model
 
     /**
      * Get the parent otpable model (polymorphic relationship).
-     *
-     * @return MorphTo
      */
     public function otpable(): MorphTo
     {
@@ -122,10 +121,10 @@ final class OneTimePassword extends Model
      */
     public function isValid(): bool
     {
-        return !$this->isExpired()
-            && !$this->isVerified()
-            && !$this->isUsed()
-            && !$this->isCancelled();
+        return ! $this->isExpired()
+            && ! $this->isVerified()
+            && ! $this->isUsed()
+            && ! $this->isCancelled();
     }
 
     /**
@@ -141,7 +140,7 @@ final class OneTimePassword extends Model
     /**
      * Verify a plain text code against the stored hash.
      *
-     * @param string $plainCode The plain text code provided by the user
+     * @param  string  $plainCode  The plain text code provided by the user
      * @return bool True if the code matches the stored hash
      */
     public function verifyCode(string $plainCode): bool

@@ -19,10 +19,10 @@ final class OtpResponseData
     /**
      * Private constructor - use factory methods instead.
      *
-     * @param OtpStatus     $status    Operation status enum
-     * @param ErrorCode|null $errorCode Optional error code for failed operations
-     * @param string|null    $message   Human-readable message (will be in French for user-facing responses)
-     * @param array|null     $data      Optional additional data (e.g., remaining attempts, expiry timestamp)
+     * @param  OtpStatus  $status  Operation status enum
+     * @param  ErrorCode|null  $errorCode  Optional error code for failed operations
+     * @param  string|null  $message  Human-readable message (will be in French for user-facing responses)
+     * @param  array|null  $data  Optional additional data (e.g., remaining attempts, expiry timestamp)
      */
     private function __construct(
         public readonly OtpStatus $status,
@@ -34,8 +34,8 @@ final class OtpResponseData
     /**
      * Create a success response.
      *
-     * @param array|null  $data    Optional additional data (e.g., verification token, user info)
-     * @param string|null $message Optional custom success message (defaults to French message)
+     * @param  array|null  $data  Optional additional data (e.g., verification token, user info)
+     * @param  string|null  $message  Optional custom success message (defaults to French message)
      */
     public static function success(?array $data = null, ?string $message = null): self
     {
@@ -49,9 +49,9 @@ final class OtpResponseData
     /**
      * Create a generic failure response.
      *
-     * @param ErrorCode     $errorCode Specific error code identifying the failure type
-     * @param string|null   $message   Optional custom error message
-     * @param array|null    $data      Optional additional error context
+     * @param  ErrorCode  $errorCode  Specific error code identifying the failure type
+     * @param  string|null  $message  Optional custom error message
+     * @param  array|null  $data  Optional additional error context
      */
     public static function failed(ErrorCode $errorCode, ?string $message = null, ?array $data = null): self
     {
@@ -66,8 +66,8 @@ final class OtpResponseData
     /**
      * Create a rate-limited response when too many requests.
      *
-     * @param string     $message Human-readable message explaining the rate limit
-     * @param array|null $data    Optional additional data (e.g., retry_after_seconds)
+     * @param  string  $message  Human-readable message explaining the rate limit
+     * @param  array|null  $data  Optional additional data (e.g., retry_after_seconds)
      */
     public static function rateLimited(string $message, ?array $data = null): self
     {
@@ -82,8 +82,8 @@ final class OtpResponseData
     /**
      * Create an invalid code response for verification failures.
      *
-     * @param string     $message Human-readable error message
-     * @param array|null $data    Optional additional data (e.g., remaining_attempts)
+     * @param  string  $message  Human-readable error message
+     * @param  array|null  $data  Optional additional data (e.g., remaining_attempts)
      */
     public static function invalidCode(string $message, ?array $data = null): self
     {
@@ -98,8 +98,8 @@ final class OtpResponseData
     /**
      * Create an expired code response.
      *
-     * @param string     $message Human-readable error message
-     * @param array|null $data    Optional additional data (e.g., expired_at timestamp)
+     * @param  string  $message  Human-readable error message
+     * @param  array|null  $data  Optional additional data (e.g., expired_at timestamp)
      */
     public static function expiredCode(string $message, ?array $data = null): self
     {
@@ -114,8 +114,8 @@ final class OtpResponseData
     /**
      * Create a response for when max verification attempts are exceeded.
      *
-     * @param string     $message Human-readable error message
-     * @param array|null $data    Optional additional data (e.g., max_attempts)
+     * @param  string  $message  Human-readable error message
+     * @param  array|null  $data  Optional additional data (e.g., max_attempts)
      */
     public static function maxAttemptsExceeded(string $message, ?array $data = null): self
     {
@@ -130,8 +130,8 @@ final class OtpResponseData
     /**
      * Create a response when OTP record is not found.
      *
-     * @param string     $message Human-readable error message
-     * @param array|null $data    Optional additional context
+     * @param  string  $message  Human-readable error message
+     * @param  array|null  $data  Optional additional context
      */
     public static function notFound(string $message, ?array $data = null): self
     {
@@ -146,8 +146,8 @@ final class OtpResponseData
     /**
      * Create a response when OTP sending fails.
      *
-     * @param string     $message Human-readable error message
-     * @param array|null $data    Optional additional error context (e.g., channel that failed)
+     * @param  string  $message  Human-readable error message
+     * @param  array|null  $data  Optional additional error context (e.g., channel that failed)
      */
     public static function sendFailed(string $message, ?array $data = null): self
     {
@@ -162,8 +162,8 @@ final class OtpResponseData
     /**
      * Create a response when OTP resending fails.
      *
-     * @param string     $message Human-readable error message
-     * @param array|null $data    Optional additional error context
+     * @param  string  $message  Human-readable error message
+     * @param  array|null  $data  Optional additional error context
      */
     public static function resendFailed(string $message, ?array $data = null): self
     {
@@ -188,7 +188,7 @@ final class OtpResponseData
      */
     public function isFailed(): bool
     {
-        return !$this->isSuccess();
+        return ! $this->isSuccess();
     }
 
     /**

@@ -335,7 +335,7 @@ return [
          * - Cancelled OTPs
          * - Disabled 2FA secrets
          * - Unused confirmed 2FA secrets
-         * 
+         *
          * Override via MFA_CLEANUP_RETENTION_DAYS environment variable.
          *
          * @var int

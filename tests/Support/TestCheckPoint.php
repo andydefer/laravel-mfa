@@ -14,8 +14,6 @@ use Kani\Mfa\Otp\Traits\HasOneTimePasswords;
  *
  * This model represents a physical checkpoint (turnstile, gate, etc.)
  * that needs to authenticate with Nemesis tokens for ticket validation.
- *
- * @package Kani\Mfa\Tests\Support
  */
 final class TestCheckPoint extends Model implements MustOtpChannels
 {

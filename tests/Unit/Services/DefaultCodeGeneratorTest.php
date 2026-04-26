@@ -12,8 +12,6 @@ use Kani\Mfa\Tests\TestCase;
  *
  * Validates that the OTP code generator produces 6-digit numeric codes
  * with proper formatting and cryptographic randomness.
- *
- * @package Kani\Mfa\Tests\Unit\Otp\Services
  */
 final class DefaultCodeGeneratorTest extends TestCase
 {
@@ -27,7 +25,7 @@ final class DefaultCodeGeneratorTest extends TestCase
         parent::setUp();
 
         // Arrange: Create generator instance
-        $this->generator = new DefaultCodeGenerator();
+        $this->generator = new DefaultCodeGenerator;
     }
 
     /**
@@ -177,7 +175,7 @@ final class DefaultCodeGeneratorTest extends TestCase
     public function test_generate_pads_with_leading_zeros(): void
     {
         // Create a testable version using reflection to simulate a small random number
-        $generator = new DefaultCodeGenerator();
+        $generator = new DefaultCodeGenerator;
 
         // We can't easily mock random_int, but we can generate enough samples
         // to likely see various formats including those with leading zeros

@@ -7,9 +7,9 @@ namespace Kani\Mfa\Otp\Services;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Kani\Mfa\Core\Helpers\TranslationHelper;
 use Kani\Mfa\Otp\Contracts\CodeGeneratorInterface;
 use Kani\Mfa\Otp\Contracts\RateLimiterInterface;
-use Kani\Mfa\Core\Helpers\TranslationHelper;
 use Kani\Mfa\Otp\Data\OtpResponseData;
 use Kani\Mfa\Otp\Models\OneTimePassword;
 use Kani\Mfa\Otp\Notifications\OtpNotification;
@@ -26,15 +26,15 @@ class OtpService
     /**
      * Create a new OTP service instance.
      *
-     * @param CodeGeneratorInterface $codeGenerator Generator for OTP codes
-     * @param RateLimiterInterface $rateLimiter Rate limiter for abuse prevention
-     * @param int $defaultExpiryMinutes Default OTP lifetime in minutes
-     * @param int $defaultMaxAttempts Default maximum verification attempts
-     * @param int $rateLimitRequests Maximum requests per time window
-     * @param int $rateLimitVerifications Maximum verifications per time window
-     * @param int $rateLimitDecayMinutes Rate limit window duration in minutes
-     * @param int $failedVerificationDecaySeconds Decay time for failed verifications
-     * @param int $rateLimitHitDecaySeconds Decay time for rate limit hits
+     * @param  CodeGeneratorInterface  $codeGenerator  Generator for OTP codes
+     * @param  RateLimiterInterface  $rateLimiter  Rate limiter for abuse prevention
+     * @param  int  $defaultExpiryMinutes  Default OTP lifetime in minutes
+     * @param  int  $defaultMaxAttempts  Default maximum verification attempts
+     * @param  int  $rateLimitRequests  Maximum requests per time window
+     * @param  int  $rateLimitVerifications  Maximum verifications per time window
+     * @param  int  $rateLimitDecayMinutes  Rate limit window duration in minutes
+     * @param  int  $failedVerificationDecaySeconds  Decay time for failed verifications
+     * @param  int  $rateLimitHitDecaySeconds  Decay time for rate limit hits
      */
     public function __construct(
         private readonly CodeGeneratorInterface $codeGenerator,
@@ -54,13 +54,13 @@ class OtpService
      * Creates an OTP record, stores it in the database, sends the notification,
      * and applies rate limiting. Previous pending OTPs are automatically deleted.
      *
-     * @param Model $otpable The entity requesting the OTP (User, Admin, etc.)
-     * @param string $type OTP type (email_verification, password_reset, 2fa, etc.)
-     * @param string $destination Destination address (email, phone number)
-     * @param array|null $channels Delivery channels to use (mail, sms, whatsapp)
-     * @param array|null $metadata Additional metadata (IP, user agent, etc.)
-     * @param int|null $expiresInMinutes Custom expiry time (uses default if null)
-     * @param int|null $maxAttempts Custom max attempts (uses default if null)
+     * @param  Model  $otpable  The entity requesting the OTP (User, Admin, etc.)
+     * @param  string  $type  OTP type (email_verification, password_reset, 2fa, etc.)
+     * @param  string  $destination  Destination address (email, phone number)
+     * @param  array|null  $channels  Delivery channels to use (mail, sms, whatsapp)
+     * @param  array|null  $metadata  Additional metadata (IP, user agent, etc.)
+     * @param  int|null  $expiresInMinutes  Custom expiry time (uses default if null)
+     * @param  int|null  $maxAttempts  Custom max attempts (uses default if null)
      * @return OtpResponseData Response containing success status and metadata
      */
     public function send(
@@ -95,8 +95,9 @@ class OtpService
 
         $notificationSent = $this->sendOtpNotification($otpable, $otpRecord, $plainCode);
 
-        if (!$notificationSent) {
+        if (! $notificationSent) {
             $otpRecord->delete();
+
             return OtpResponseData::sendFailed(TranslationHelper::trans('messages.send_failed'));
         }
 
@@ -117,13 +118,13 @@ class OtpService
      * If no pending OTP exists, falls back to sending a new one.
      * Reuses previous channels and metadata if not explicitly provided.
      *
-     * @param Model $otpable The entity requesting the OTP
-     * @param string $type OTP type
-     * @param string $destination Destination address
-     * @param array|null $channels Delivery channels (reuses previous if null)
-     * @param array|null $metadata Additional metadata (reuses previous if null)
-     * @param int|null $expiresInMinutes Custom expiry time
-     * @param int|null $maxAttempts Custom max attempts (reuses previous if null)
+     * @param  Model  $otpable  The entity requesting the OTP
+     * @param  string  $type  OTP type
+     * @param  string  $destination  Destination address
+     * @param  array|null  $channels  Delivery channels (reuses previous if null)
+     * @param  array|null  $metadata  Additional metadata (reuses previous if null)
+     * @param  int|null  $expiresInMinutes  Custom expiry time
+     * @param  int|null  $maxAttempts  Custom max attempts (reuses previous if null)
      * @return OtpResponseData Response containing success status and metadata
      */
     public function resend(
@@ -137,7 +138,7 @@ class OtpService
     ): OtpResponseData {
         $pendingOtp = $this->findPendingOtp($otpable, $type, $destination);
 
-        if (!$pendingOtp) {
+        if (! $pendingOtp) {
             return $this->send($otpable, $type, $destination, $channels, $metadata, $expiresInMinutes, $maxAttempts);
         }
 
@@ -164,8 +165,9 @@ class OtpService
 
         $notificationSent = $this->sendOtpNotification($otpable, $newOtpRecord, $plainCode);
 
-        if (!$notificationSent) {
+        if (! $notificationSent) {
             $newOtpRecord->delete();
+
             return OtpResponseData::resendFailed(TranslationHelper::trans('messages.resend_failed'));
         }
 
@@ -186,11 +188,11 @@ class OtpService
      * Checks rate limiting, OTP existence, expiration, attempts limit,
      * and code validity. Marks the OTP as verified and optionally consumed.
      *
-     * @param Model $otpable The entity attempting verification
-     * @param string $code The OTP code provided by the user
-     * @param string $type OTP type
-     * @param string $destination Destination address
-     * @param bool $consume Whether to mark the OTP as used after verification
+     * @param  Model  $otpable  The entity attempting verification
+     * @param  string  $code  The OTP code provided by the user
+     * @param  string  $type  OTP type
+     * @param  string  $destination  Destination address
+     * @param  bool  $consume  Whether to mark the OTP as used after verification
      * @return OtpResponseData Response with verification status
      */
     public function verify(
@@ -209,8 +211,9 @@ class OtpService
         // Find OTP without expiration filter first
         $otpRecord = $this->findOtpForVerification($otpable, $type, $destination);
 
-        if (!$otpRecord) {
+        if (! $otpRecord) {
             $this->recordFailedVerificationAttempt($rateLimitKey);
+
             return OtpResponseData::notFound(TranslationHelper::trans('messages.otp_not_found'));
         }
 
@@ -218,15 +221,17 @@ class OtpService
         if ($otpRecord->isExpired()) {
             $otpRecord->markAsCancelled();
             $this->recordFailedVerificationAttempt($rateLimitKey);
+
             return OtpResponseData::expiredCode(TranslationHelper::trans('messages.expired_code'));
         }
 
         if ($otpRecord->isUsed() || $otpRecord->isVerified()) {
             $this->recordFailedVerificationAttempt($rateLimitKey);
+
             return OtpResponseData::notFound(TranslationHelper::trans('messages.otp_not_found'));
         }
 
-        if (!$otpRecord->verifyCode($code)) {
+        if (! $otpRecord->verifyCode($code)) {
             return $this->handleFailedVerification($otpRecord, $rateLimitKey);
         }
 
@@ -236,9 +241,9 @@ class OtpService
     /**
      * Find an OTP for verification (including expired ones).
      *
-     * @param Model $otpable The entity
-     * @param string $type OTP type
-     * @param string $destination Destination address
+     * @param  Model  $otpable  The entity
+     * @param  string  $type  OTP type
+     * @param  string  $destination  Destination address
      * @return OneTimePassword|null The OTP or null
      */
     private function findOtpForVerification(Model $otpable, string $type, string $destination): ?OneTimePassword
@@ -257,9 +262,9 @@ class OtpService
     /**
      * Cancel all pending OTPs for a given entity, type, and destination.
      *
-     * @param Model $otpable The entity whose OTPs should be cancelled
-     * @param string $type OTP type
-     * @param string $destination Destination address
+     * @param  Model  $otpable  The entity whose OTPs should be cancelled
+     * @param  string  $type  OTP type
+     * @param  string  $destination  Destination address
      * @return OtpResponseData Response with count of cancelled OTPs
      */
     public function cancel(Model $otpable, string $type, string $destination): OtpResponseData
@@ -279,7 +284,7 @@ class OtpService
     /**
      * Hash a plain text code for secure storage.
      *
-     * @param string $plainCode The plain code to hash
+     * @param  string  $plainCode  The plain code to hash
      * @return string Hashed code
      */
     private function hashPlainCode(string $plainCode): string
@@ -290,8 +295,8 @@ class OtpService
     /**
      * Check if a rate limit has been exceeded for a given key.
      *
-     * @param string $key Rate limit key
-     * @param int $limit Maximum allowed attempts
+     * @param  string  $key  Rate limit key
+     * @param  int  $limit  Maximum allowed attempts
      * @return bool True if rate limit exceeded
      */
     private function isRateLimitExceeded(string $key, int $limit): bool
@@ -302,7 +307,7 @@ class OtpService
     /**
      * Record a hit on the rate limiter for a given key.
      *
-     * @param string $key Rate limit key
+     * @param  string  $key  Rate limit key
      */
     private function recordRateLimitHit(string $key): void
     {
@@ -312,7 +317,7 @@ class OtpService
     /**
      * Record a failed verification attempt on the rate limiter.
      *
-     * @param string $key Rate limit key
+     * @param  string  $key  Rate limit key
      */
     private function recordFailedVerificationAttempt(string $key): void
     {
@@ -322,12 +327,13 @@ class OtpService
     /**
      * Create a rate limited response with appropriate wait time.
      *
-     * @param string $key Rate limit key
+     * @param  string  $key  Rate limit key
      * @return OtpResponseData Rate limited response
      */
     private function createRateLimitedResponse(string $key): OtpResponseData
     {
         $waitSeconds = $this->rateLimiter->getAvailableInSeconds($key);
+
         return OtpResponseData::rateLimited(
             TranslationHelper::trans('messages.rate_limited', ['seconds' => $waitSeconds])
         );
@@ -336,8 +342,8 @@ class OtpService
     /**
      * Handle a failed verification attempt.
      *
-     * @param OneTimePassword $otpRecord The OTP record
-     * @param string $rateLimitKey Rate limit key
+     * @param  OneTimePassword  $otpRecord  The OTP record
+     * @param  string  $rateLimitKey  Rate limit key
      * @return OtpResponseData Response based on attempt count
      */
     private function handleFailedVerification(OneTimePassword $otpRecord, string $rateLimitKey): OtpResponseData
@@ -349,6 +355,7 @@ class OtpService
 
         if ($otpRecord->hasExceededMaxAttempts()) {
             $otpRecord->markAsCancelled();
+
             return OtpResponseData::maxAttemptsExceeded(
                 TranslationHelper::trans('messages.max_attempts_exceeded')
             );
@@ -364,12 +371,12 @@ class OtpService
     /**
      * Handle a successful verification attempt.
      *
-     * @param OneTimePassword $otpRecord The OTP record
-     * @param string $rateLimitKey Rate limit key for verification
-     * @param bool $consume Whether to mark as used
-     * @param Model $otpable The entity being verified
-     * @param string $type OTP type
-     * @param string $destination Destination address
+     * @param  OneTimePassword  $otpRecord  The OTP record
+     * @param  string  $rateLimitKey  Rate limit key for verification
+     * @param  bool  $consume  Whether to mark as used
+     * @param  Model  $otpable  The entity being verified
+     * @param  string  $type  OTP type
+     * @param  string  $destination  Destination address
      * @return OtpResponseData Success response
      */
     private function handleSuccessfulVerification(
@@ -398,14 +405,14 @@ class OtpService
     /**
      * Create a new OTP record in the database.
      *
-     * @param Model $otpable The entity requesting the OTP
-     * @param string $type OTP type
-     * @param string $destination Destination address
-     * @param array|null $channels Delivery channels
-     * @param array|null $metadata Additional metadata
-     * @param int $expiresInMinutes Expiry time in minutes
-     * @param int $maxAttempts Maximum verification attempts
-     * @param string $plainCode Plain code to hash and store
+     * @param  Model  $otpable  The entity requesting the OTP
+     * @param  string  $type  OTP type
+     * @param  string  $destination  Destination address
+     * @param  array|null  $channels  Delivery channels
+     * @param  array|null  $metadata  Additional metadata
+     * @param  int  $expiresInMinutes  Expiry time in minutes
+     * @param  int  $maxAttempts  Maximum verification attempts
+     * @param  string  $plainCode  Plain code to hash and store
      * @return OneTimePassword The created OTP record
      */
     private function createOtpRecord(
@@ -434,15 +441,16 @@ class OtpService
     /**
      * Send the OTP notification to the notifiable entity.
      *
-     * @param Model $otpable The entity receiving the notification
-     * @param OneTimePassword $otpRecord The OTP record
-     * @param string $plainCode The plain code to include in notification
+     * @param  Model  $otpable  The entity receiving the notification
+     * @param  OneTimePassword  $otpRecord  The OTP record
+     * @param  string  $plainCode  The plain code to include in notification
      * @return bool True if notification was sent successfully
      */
     private function sendOtpNotification(Model $otpable, OneTimePassword $otpRecord, string $plainCode): bool
     {
         try {
             $otpable->notify(new OtpNotification($otpRecord, $plainCode));
+
             return true;
         } catch (\Exception $exception) {
             Log::error('Failed to send OTP notification', [
@@ -452,6 +460,7 @@ class OtpService
                 'destination' => $otpRecord->destination,
                 'error' => $exception->getMessage(),
             ]);
+
             return false;
         }
     }
@@ -459,9 +468,9 @@ class OtpService
     /**
      * Find any OTP record (valid or invalid) for the given parameters.
      *
-     * @param Model $otpable The entity
-     * @param string $type OTP type
-     * @param string $destination Destination address
+     * @param  Model  $otpable  The entity
+     * @param  string  $type  OTP type
+     * @param  string  $destination  Destination address
      * @return OneTimePassword|null The most recent OTP or null
      */
     private function findOtp(Model $otpable, string $type, string $destination): ?OneTimePassword
@@ -478,9 +487,9 @@ class OtpService
     /**
      * Find a valid OTP that is not expired, verified, used, or cancelled.
      *
-     * @param Model $otpable The entity
-     * @param string $type OTP type
-     * @param string $destination Destination address
+     * @param  Model  $otpable  The entity
+     * @param  string  $type  OTP type
+     * @param  string  $destination  Destination address
      * @return OneTimePassword|null The valid OTP or null
      */
     private function findValidOtp(Model $otpable, string $type, string $destination): ?OneTimePassword
@@ -500,9 +509,9 @@ class OtpService
     /**
      * Find a pending OTP that is still valid for use.
      *
-     * @param Model $otpable The entity
-     * @param string $type OTP type
-     * @param string $destination Destination address
+     * @param  Model  $otpable  The entity
+     * @param  string  $type  OTP type
+     * @param  string  $destination  Destination address
      * @return OneTimePassword|null The pending OTP or null
      */
     private function findPendingOtp(Model $otpable, string $type, string $destination): ?OneTimePassword
@@ -522,9 +531,9 @@ class OtpService
     /**
      * Delete all old pending OTPs for the given parameters.
      *
-     * @param Model $otpable The entity
-     * @param string $type OTP type
-     * @param string $destination Destination address
+     * @param  Model  $otpable  The entity
+     * @param  string  $type  OTP type
+     * @param  string  $destination  Destination address
      */
     private function deleteOldPendingOtps(Model $otpable, string $type, string $destination): void
     {
@@ -540,9 +549,9 @@ class OtpService
     /**
      * Build a rate limit key for OTP request operations.
      *
-     * @param Model $otpable The entity
-     * @param string $type OTP type
-     * @param string $destination Destination address
+     * @param  Model  $otpable  The entity
+     * @param  string  $type  OTP type
+     * @param  string  $destination  Destination address
      * @return string Rate limit key
      */
     private function buildRequestRateLimitKey(Model $otpable, string $type, string $destination): string
@@ -559,9 +568,9 @@ class OtpService
     /**
      * Build a rate limit key for OTP verification operations.
      *
-     * @param Model $otpable The entity
-     * @param string $type OTP type
-     * @param string $destination Destination address
+     * @param  Model  $otpable  The entity
+     * @param  string  $type  OTP type
+     * @param  string  $destination  Destination address
      * @return string Rate limit key
      */
     private function buildVerificationRateLimitKey(Model $otpable, string $type, string $destination): string

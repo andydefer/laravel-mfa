@@ -313,11 +313,11 @@ lint-phpstan: ## Run PHPStan static analysis
 	@$(PHPSTAN) analyse src tests --level=max
 	@echo "✅ PHPStan analysis completed"
 
-.PHONY: lint-rector
-lint-rector: ## Run Rector refactoring
-	@echo "🔄 Running Rector refactoring..."
-	@$(RECTOR) process
-	@echo "✅ Rector refactoring completed"
+#.PHONY: lint-rector
+#lint-rector: ## Run Rector refactoring
+#	@echo "🔄 Running Rector refactoring..."
+#	@$(RECTOR) process
+#	@echo "✅ Rector refactoring completed"
 
 .PHONY: lint-psalm
 lint-psalm: ## Run Psalm static analysis
@@ -356,14 +356,14 @@ lint-phpstan-md: ## Run PHPStan and save report to phpstan.md
 	@$(PHPSTAN) analyse src tests --level=max --no-progress 2>&1 >> phpstan.md || true
 	@echo "✅ PHPStan report saved to phpstan.md"
 
-.PHONY: lint-rector-md
-lint-rector-md: ## Run Rector and save report to rector.md
-	@echo "📊 Running Rector and saving report to rector.md..."
-	@echo "# Rector Refactoring Report" > rector.md
-	@echo "*Generated: $$(date)*" >> rector.md
-	@echo "" >> rector.md
-	@$(RECTOR) process --dry-run 2>&1 >> rector.md || true
-	@echo "✅ Rector report saved to rector.md"
+#.PHONY: lint-rector-md
+#lint-rector-md: ## Run Rector and save report to rector.md
+#	@echo "📊 Running Rector and saving report to rector.md..."
+#	@echo "# Rector Refactoring Report" > rector.md
+#	@echo "*Generated: $$(date)*" >> rector.md
+#	@echo "" >> rector.md
+#	@$(RECTOR) process --dry-run 2>&1 >> rector.md || true
+#	@echo "✅ Rector report saved to rector.md"
 
 .PHONY: lint-psalm-md
 lint-psalm-md: ## Run Psalm and save report to psalm.md
@@ -390,7 +390,7 @@ lint-all-md: ## Run all linters and save reports (non-blocking)
 lint-all-fix-md: ## Run all fixers and save reports (non-blocking)
 	@echo "📦 Running all code fixers and saving reports..."
 	@make lint-php-fix-md
-	@make lint-rector-md
+#	@make lint-rector-md
 	@echo "✅ All code fixer reports generated"
 
 # ---------------------------------------------------

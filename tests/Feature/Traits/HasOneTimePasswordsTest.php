@@ -1,4 +1,5 @@
 <?php
+
 // tests/Feature/Traits/HasOneTimePasswordsTest.php
 
 declare(strict_types=1);
@@ -9,8 +10,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Kani\Mfa\Otp\Data\OtpResponseData;
 use Kani\Mfa\Otp\Models\OneTimePassword;
 use Kani\Mfa\Otp\Services\OtpService;
-use Kani\Mfa\Tests\TestCase;
 use Kani\Mfa\Tests\Support\TestUser;
+use Kani\Mfa\Tests\TestCase;
 use Mockery;
 
 /**
@@ -24,7 +25,9 @@ final class HasOneTimePasswordsTest extends TestCase
     use RefreshDatabase;
 
     private TestUser $testUser;
+
     private string $testType;
+
     private string $testDestination;
 
     protected function setUp(): void

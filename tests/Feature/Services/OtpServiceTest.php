@@ -14,8 +14,8 @@ use Kani\Mfa\Otp\Notifications\OtpNotification;
 use Kani\Mfa\Otp\Services\DefaultCodeGenerator;
 use Kani\Mfa\Otp\Services\LaravelRateLimiter;
 use Kani\Mfa\Otp\Services\OtpService;
-use Kani\Mfa\Tests\TestCase;
 use Kani\Mfa\Tests\Support\TestUser;
+use Kani\Mfa\Tests\TestCase;
 
 /**
  * Test suite for OtpService core functionality.
@@ -28,8 +28,11 @@ final class OtpServiceTest extends TestCase
     use RefreshDatabase;
 
     private OtpService $otpService;
+
     private TestUser $testUser;
+
     private string $testType;
+
     private string $testDestination;
 
     /**
@@ -44,8 +47,8 @@ final class OtpServiceTest extends TestCase
         config()->set('otp.localization.fallback_locale', 'en');
 
         // Arrange: Create service dependencies
-        $codeGenerator = new DefaultCodeGenerator();
-        $rateLimiter = new LaravelRateLimiter();
+        $codeGenerator = new DefaultCodeGenerator;
+        $rateLimiter = new LaravelRateLimiter;
 
         // Act: Instantiate OTP service with test configuration including decay settings
         $this->otpService = new OtpService(
@@ -157,7 +160,7 @@ final class OtpServiceTest extends TestCase
     public function test_send_returns_rate_limited_response_when_exceeded(): void
     {
         // Arrange: Generate rate limit key for the user
-        $rateLimitKey = 'otp_request:' . $this->testUser->getMorphClass() . ':' . $this->testUser->id . ':' . $this->testType . ':' . md5($this->testDestination);
+        $rateLimitKey = 'otp_request:'.$this->testUser->getMorphClass().':'.$this->testUser->id.':'.$this->testType.':'.md5($this->testDestination);
 
         // Arrange: Exceed rate limit by hitting the key 4 times (limit is 3)
         RateLimiter::hit($rateLimitKey, 60);

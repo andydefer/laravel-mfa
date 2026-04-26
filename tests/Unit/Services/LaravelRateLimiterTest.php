@@ -13,12 +13,11 @@ use Kani\Mfa\Tests\TestCase;
  *
  * Validates that the LaravelRateLimiter correctly delegates operations
  * to Laravel's RateLimiter facade and properly handles edge cases.
- *
- * @package Kani\Mfa\Tests\Unit\Otp\Services
  */
 final class LaravelRateLimiterTest extends TestCase
 {
     private LaravelRateLimiter $rateLimiter;
+
     private string $testKey;
 
     /**
@@ -29,8 +28,8 @@ final class LaravelRateLimiterTest extends TestCase
         parent::setUp();
 
         // Arrange: Create service instance and test key
-        $this->rateLimiter = new LaravelRateLimiter();
-        $this->testKey = 'test_rate_limit_key_' . uniqid();
+        $this->rateLimiter = new LaravelRateLimiter;
+        $this->testKey = 'test_rate_limit_key_'.uniqid();
     }
 
     /**
@@ -164,8 +163,8 @@ final class LaravelRateLimiterTest extends TestCase
     public function test_different_keys_have_independent_rate_limits(): void
     {
         // Arrange: Two different keys
-        $key1 = 'key1_' . uniqid();
-        $key2 = 'key2_' . uniqid();
+        $key1 = 'key1_'.uniqid();
+        $key2 = 'key2_'.uniqid();
 
         // Act: Hit only key1
         for ($i = 0; $i < 3; $i++) {
@@ -203,7 +202,7 @@ final class LaravelRateLimiterTest extends TestCase
     public function test_clear_on_non_existent_key_does_not_throw_exception(): void
     {
         // Arrange: Non-existent key
-        $nonExistentKey = 'non_existent_' . uniqid();
+        $nonExistentKey = 'non_existent_'.uniqid();
 
         // Act & Assert: Clear should not throw exception
         $this->rateLimiter->clear($nonExistentKey);
@@ -216,7 +215,7 @@ final class LaravelRateLimiterTest extends TestCase
     public function test_get_available_in_seconds_on_non_existent_key_returns_zero(): void
     {
         // Arrange: Non-existent key
-        $nonExistentKey = 'non_existent_' . uniqid();
+        $nonExistentKey = 'non_existent_'.uniqid();
 
         // Act: Get available time
         $availableIn = $this->rateLimiter->getAvailableInSeconds($nonExistentKey);

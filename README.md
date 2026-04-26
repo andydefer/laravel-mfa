@@ -1,64 +1,134 @@
-# Laravel OTP — Gestion de mots de passe à usage unique pour Laravel
+# Laravel MFA (Multi-Factor Authentication)
 
-![PHP Version](https://img.shields.io/badge/PHP-8.1%2B-blue)
-![Laravel Version](https://img.shields.io/badge/Laravel-11.x-12.x-orange)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Tests](https://img.shields.io/badge/tests-100%2B%20passing-brightgreen)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/andydefer/laravel-mfa.svg)](https://packagist.org/packages/andydefer/laravel-mfa)
+[![PHP Version Require](https://img.shields.io/packagist/php-v/andydefer/laravel-mfa.svg)](https://packagist.org/packages/andydefer/laravel-mfa)
+[![Laravel Version](https://img.shields.io/badge/Laravel-12.x-red.svg)](https://laravel.com)
+[![License](https://img.shields.io/packagist/l/andydefer/laravel-mfa.svg)](https://packagist.org/packages/andydefer/laravel-mfa)
+[![Total Downloads](https://img.shields.io/packagist/dt/andydefer/laravel-mfa.svg)](https://packagist.org/packages/andydefer/laravel-mfa)
 
-**Laravel OTP** est un package complet pour la gestion de **mots de passe à usage unique** (One-Time Passwords). Il permet d'envoyer, vérifier, renvoyer et annuler des codes OTP avec une sécurité renforcée.
+Un package complet de Multi-Factor Authentication pour Laravel 12, supportant OTP (email/SMS) et TOTP (Google Authenticator).
 
----
+## ✨ Fonctionnalités
 
-## 📦 Installation
+- **🔑 OTP (One-Time Password)** - Envoi et vérification de codes à usage unique par email ou SMS
+- **🔐 TOTP (Time-based One-Time Password)** - Authentification à deux facteurs compatible Google Authenticator
+- **📱 QR Codes** - Génération automatique de QR codes pour l'application Google Authenticator
+- **🔁 Codes de récupération** - Génération de codes de secours pour récupérer l'accès
+- **⏱️ Rate Limiting** - Protection contre les attaques par force brute
+- **🌍 Multilingue** - Support français et anglais inclus (extensible)
+- **🧹 Auto-cleanup** - Nettoyage automatique des OTPs expirés et anciennes configurations 2FA
+- **🔄 Polymorphique** - Supporte n'importe quel modèle Eloquent (User, Admin, etc.)
 
-### Installation via Composer
+## 📋 Prérequis
+
+- PHP 8.1 ou supérieur
+- Laravel 12.x
+- Composer
+
+## 🚀 Installation
+
+### 1. Installer via Composer
 
 ```bash
-composer require andydefer/laravel-otp
+composer require andydefer/laravel-mfa
 ```
 
-### Installation automatique (recommandée)
+### 2. Publier les fichiers de configuration et migrations
 
 ```bash
-php artisan otp:install
+php artisan mfa:install
 ```
 
-Cette commande :
-- Publie le fichier de configuration `config/otp.php`
-- Publie les migrations
-- Exécute les migrations
+Cette commande va :
+- Publier le fichier de configuration `config/mfa.php`
+- Publier les migrations OTP et TOTP
+- Exécuter les migrations
 
-### Installation manuelle
+**Options disponibles :**
 
 ```bash
-# Publier la configuration
-php artisan vendor:publish --tag=otp-config
+# Forcer l'installation sans confirmation
+php artisan mfa:install --force
 
-# Publier les migrations
-php artisan vendor:publish --tag=otp-migrations
+# Installer sans exécuter les migrations
+php artisan mfa:install --no-migrate
 
-# Publier les traductions (optionnel)
-php artisan vendor:publish --tag=otp-translations
+# Installer uniquement l'OTP (sans le 2FA/TOTP)
+php artisan mfa:install --without-totp
 
-# Exécuter les migrations
+# Installer uniquement le TOTP/2FA (sans l'OTP)
+php artisan mfa:install --without-otp
+```
+
+### 3. Migrer la base de données (si non fait automatiquement)
+
+```bash
 php artisan migrate
 ```
 
-### Vérifier l'installation
+## ⚙️ Configuration
 
-```bash
-php artisan migrate:status
-# Vous devez voir "one_time_passwords" dans la liste
+### Variables d'environnement
 
-php artisan list | grep otp
-# Vous devez voir les commandes otp:install et otp:cleanup
+Créez/modifiez les variables suivantes dans votre fichier `.env` :
+
+```env
+# OTP Settings
+MFA_OTP_DEFAULT_EXPIRY_MINUTES=10
+MFA_OTP_DEFAULT_MAX_ATTEMPTS=3
+MFA_OTP_LOCALE=en
+MFA_OTP_RATE_LIMIT_REQUESTS=3
+MFA_OTP_RATE_LIMIT_VERIFICATIONS=5
+
+# TOTP Settings
+MFA_TOTP_PERIOD=30
+MFA_TOTP_DIGITS=6
+MFA_TOTP_ALGORITHM=sha1
+MFA_TOTP_WINDOW=1
+MFA_TOTP_ISSUER=MyApplication
+
+# Recovery Codes
+MFA_RECOVERY_CODES_COUNT=8
+MFA_RECOVERY_CODE_LENGTH=10
+MFA_RECOVERY_CODE_HASH_ALGO=sha256
+
+# Cleanup
+MFA_CLEANUP_AUTO_CLEANUP=true
+MFA_CLEANUP_RETENTION_DAYS=30
 ```
 
----
+### Fichier de configuration
 
-## 🚀 Démarrage rapide
+Après installation, vous pouvez personnaliser `config/mfa.php` :
 
-### 1. Ajouter le trait à votre modèle
+```php
+return [
+    'otp' => [
+        'default_expiry_minutes' => env('MFA_OTP_DEFAULT_EXPIRY_MINUTES', 10),
+        'default_max_attempts' => env('MFA_OTP_DEFAULT_MAX_ATTEMPTS', 3),
+        'localization' => [
+            'locale' => env('MFA_OTP_LOCALE', 'en'),
+            'supported_locales' => ['fr', 'en'],
+            'fallback_locale' => env('MFA_OTP_FALLBACK_LOCALE', 'en'),
+        ],
+        // ... autres configurations
+    ],
+    'totp' => [
+        'period' => env('MFA_TOTP_PERIOD', 30),
+        'digits' => env('MFA_TOTP_DIGITS', 6),
+        'algorithm' => env('MFA_TOTP_ALGORITHM', 'sha1'),
+        'issuer' => env('MFA_TOTP_ISSUER', config('app.name')),
+        'window' => env('MFA_TOTP_WINDOW', 1),
+    ],
+    // ...
+];
+```
+
+## 🔧 Utilisation
+
+### 1. Préparer votre modèle User
+
+Ajoutez les traits à votre modèle `User` :
 
 ```php
 <?php
@@ -66,508 +136,316 @@ php artisan list | grep otp
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Kani\Mfa\Traits\HasOneTimePasswords;
+use Kani\Mfa\Otp\Traits\HasOneTimePasswords;
+use Kani\Mfa\Totp\Traits\HasTwoFactorAuthentication;
 
 class User extends Authenticatable
 {
     use HasOneTimePasswords;
+    use HasTwoFactorAuthentication;
+    
+    // Vos autres configurations...
 }
 ```
 
-### 2. Envoyer un code OTP
+### 2. Interface pour les canaux de livraison (optionnel)
+
+Si vous souhaitez personnaliser les canaux de livraison OTP (email, SMS, WhatsApp) :
 
 ```php
-$user = User::find(1);
+<?php
 
+namespace App\Models;
+
+use Kani\Mfa\Otp\Contracts\MustOtpChannels;
+
+class User extends Authenticatable implements MustOtpChannels
+{
+    use HasOneTimePasswords;
+    use HasTwoFactorAuthentication;
+    
+    /**
+     * Définit les canaux de livraison OTP pour cet utilisateur.
+     *
+     * @return array<int, string>
+     */
+    public function getOtpChannels(): array
+    {
+        return ['mail', 'sms']; // Email et SMS
+    }
+}
+```
+
+## 📱 OTP (One-Time Password)
+
+### Envoyer un OTP
+
+```php
+// Envoi simple
 $response = $user->sendOtp(
     type: 'email_verification',
-    destination: $user->email,
-    channels: ['email']
+    destination: 'user@example.com'
 );
 
 if ($response->isSuccess()) {
-    // Un code à 6 chiffres a été envoyé
+    // OTP envoyé avec succès
     $expiresAt = $response->data['expires_at'];
+    $expiresInMinutes = $response->data['expires_in_minutes'];
+}
+
+// Envoi avec options personnalisées
+$response = $user->sendOtp(
+    type: 'login',
+    destination: '+33612345678',
+    channels: ['sms'],                    // Canal de livraison
+    meta: ['ip' => request()->ip()],      // Métadonnées
+    expiresInMinutes: 5,                  // Expire dans 5 minutes
+    maxAttempts: 2                        // Maximum 2 tentatives
+);
+```
+
+### Renvoyer un OTP
+
+```php
+$response = $user->resendOtp(
+    type: 'email_verification',
+    destination: 'user@example.com'
+);
+
+if ($response->isSuccess()) {
+    // Nouvel OTP envoyé, l'ancien a été annulé
 }
 ```
 
-### 3. Vérifier le code
+### Vérifier un OTP
 
 ```php
 $response = $user->verifyOtp(
     code: $request->code,
     type: 'email_verification',
-    destination: $user->email,
-    consume: true
+    destination: $request->email,
+    consume: true  // Marquer comme utilisé après vérification
 );
 
 if ($response->isSuccess()) {
-    $user->email_verified_at = now();
-    $user->save();
+    // OTP valide ✅
+} else {
+    // OTP invalide
+    switch ($response->status->value) {
+        case 'invalid_code':
+            // Code incorrect
+            break;
+        case 'expired_code':
+            // Code expiré
+            break;
+        case 'max_attempts_exceeded':
+            // Trop de tentatives
+            break;
+        case 'rate_limited':
+            // Trop de demandes, attendez
+            break;
+    }
 }
 ```
 
-### 4. Renvoyer un code (si l'utilisateur ne l'a pas reçu)
+### Annuler des OTPs en attente
 
 ```php
-$response = $user->resendOtp(
-    type: 'email_verification',
-    destination: $user->email
-);
+$response = $user->cancelOtps('email_verification', 'user@example.com');
+// Retourne le nombre d'OTPs annulés
+```
 
-if ($response->isSuccess()) {
-    // Un nouveau code a été envoyé
-    // L'ancien code est automatiquement annulé
+### Vérifier l'existence d'un OTP valide
+
+```php
+if ($user->hasValidOtp('email_verification', 'user@example.com')) {
+    // Un OTP valide existe
+}
+
+$pendingOtp = $user->getPendingOtp('email_verification', 'user@example.com');
+```
+
+## 🔐 TOTP / 2FA (Google Authenticator)
+
+### Initialiser la configuration 2FA
+
+```php
+// Obtenir ou créer un secret TOTP
+$secret = $user->getTwoFactorSecret();
+
+// Générer l'URI pour le QR code
+$qrCodeUri = $user->getTwoFactorQrCodeUri();
+
+// Générer un QR code (exemple avec Simple QrCode)
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+
+$qrCode = QrCode::size(200)->generate($qrCodeUri);
+```
+
+### Activer la 2FA
+
+```php
+// L'utilisateur scanne le QR code et fournit le code à 6 chiffres
+$code = $request->input('code'); // Code de l'application Authenticator
+
+$enabled = $user->enableTwoFactor($code);
+
+if ($enabled) {
+    // 2FA activée avec succès ! ✅
+    
+    // Générer les codes de récupération à montrer à l'utilisateur
+    $recoveryCodes = $user->generateRecoveryCodes();
+    
+    // Affichez ces codes à l'utilisateur (une seule fois !)
+    foreach ($recoveryCodes as $code) {
+        echo $code . PHP_EOL;
+    }
 }
 ```
 
----
-
-## 📖 Concepts fondamentaux
-
-### Qu'est-ce qu'un OTP ?
-
-Un OTP (One-Time Password) est un code à usage unique, généralement à 6 chiffres, qui expire après un court délai (10 minutes par défaut). Il est envoyé par email ou SMS pour vérifier l'identité d'un utilisateur.
-
-### Le polymorphisme : un seul système pour tous vos modèles
-
-Le package utilise le polymorphisme Laravel. Cela signifie qu'**un seul système fonctionne avec tous vos modèles**.
-
-| Sans polymorphisme | Avec polymorphisme |
-|-------------------|-------------------|
-| Table `user_otps` | Table unique `one_time_passwords` |
-| Table `doctor_otps` | Colonne `otpable_type` = modèle concerné |
-| Table `admin_otps` | Colonne `otpable_id` = ID du modèle |
-
-**Exemple** :
+### Désactiver la 2FA
 
 ```php
-// Le même code fonctionne pour User
-$user->sendOtp('login', $user->email);
+$disabled = $user->disableTwoFactor();
 
-// Et pour Doctor
-$doctor->sendOtp('login', $doctor->email);
-
-// Et pour Admin
-$admin->sendOtp('login', $admin->email);
+if ($disabled) {
+    // 2FA désactivée
+}
 ```
 
-### Les trois entités principales
-
-| Entité | Rôle | Méthodes principales |
-|--------|------|---------------------|
-| **OneTimePassword** (modèle) | Stocke les OTPs en base | `isExpired()`, `verifyCode()`, `markAsUsed()` |
-| **OtpService** (service) | Contient la logique métier | `send()`, `verify()`, `resend()`, `cancel()` |
-| **HasOneTimePasswords** (trait) | Interface pour les modèles | `sendOtp()`, `verifyOtp()`, `resendOtp()` |
-
-### Le cycle de vie d'un OTP
-
-```
-1. sendOtp()
-   ├── Vérifie le rate limiting
-   ├── Supprime les anciens OTPs en attente
-   ├── Génère un code (ex: 123456)
-   ├── Hache le code (ex: $2y$10$...)
-   ├── Stocke le hash en base
-   ├── Envoie le code en clair par email/SMS
-   └── Retourne la réponse
-
-2. L'utilisateur saisit le code
-
-3. verifyOtp()
-   ├── Vérifie le rate limiting
-   ├── Recherche l'OTP correspondant
-   ├── Vérifie l'expiration
-   ├── Vérifie le code
-   ├── Incrémente les tentatives si erreur
-   ├── Marque comme vérifié si succès
-   ├── Marque comme utilisé si demandé
-   └── Retourne la réponse
-
-4. resendOtp()
-   ├── Vérifie le rate limiting
-   ├── Annule l'ancien OTP (s'il existe)
-   ├── Génère un nouveau code
-   ├── Stocke le nouveau hash
-   ├── Envoie le nouveau code
-   └── Retourne la réponse
-```
-
----
-
-## 🛠️ Installation détaillée
-
-### Structure des fichiers publiés
-
-```
-config/
-└── otp.php                     # Configuration du package
-
-database/migrations/
-└── 2026_01_15_000001_create_one_time_passwords_table.php
-
-resources/lang/vendor/otp/
-├── en/
-│   └── messages.php           # Traductions anglaises
-└── fr/
-    └── messages.php           # Traductions françaises
-```
-
-### Configuration (`config/otp.php`)
+### Vérifier le code 2FA lors de la connexion
 
 ```php
-<?php
+// Lors de la connexion, après vérification du mot de passe
+$code = $request->input('2fa_code'); // Code à 6 chiffres
 
-return [
-    // Paramètres par défaut des OTPs
-    'default_expiry_minutes' => env('OTP_DEFAULT_EXPIRY_MINUTES', 10),
-    'default_max_attempts' => env('OTP_DEFAULT_MAX_ATTEMPTS', 3),
-
-    // Paramètres de nettoyage automatique
-    'cleanup' => [
-        'auto_cleanup' => env('OTP_AUTO_CLEANUP', true),
-        'frequency' => env('OTP_CLEANUP_FREQUENCY', 60),
-        'retention_days' => env('OTP_RETENTION_DAYS', 30),
-    ],
-
-    // Paramètres de sécurité (rate limiting)
-    'security' => [
-        'rate_limit_requests' => env('OTP_RATE_LIMIT_REQUESTS', 3),
-        'rate_limit_verifications' => env('OTP_RATE_LIMIT_VERIFICATIONS', 5),
-        'rate_limit_decay_minutes' => env('OTP_RATE_LIMIT_DECAY_MINUTES', 60),
-        'failed_verification_decay_seconds' => env('OTP_FAILED_VERIFICATION_DECAY_SECONDS', 300),
-        'rate_limit_hit_decay_seconds' => env('OTP_RATE_LIMIT_HIT_DECAY_SECONDS', 60),
-    ],
-
-    // Paramètres de localisation (multi-langues)
-    'localization' => [
-        'locale' => env('OTP_LOCALE', 'fr'),
-        'supported_locales' => ['fr', 'en'],
-        'fallback_locale' => env('OTP_FALLBACK_LOCALE', 'en'),
-    ],
-];
+if ($user->verifyTwoFactorCode($code)) {
+    // Code valide - Connexion autorisée ✅
+    Auth::login($user);
+} else {
+    // Code invalide
+    return back()->withErrors(['2fa_code' => 'Code invalide']);
+}
 ```
 
-### Variables d'environnement
+### Codes de récupération
+
+```php
+// Générer de nouveaux codes de récupération
+$recoveryCodes = $user->generateRecoveryCodes();
+
+// Vérifier un code de récupération (pendant la connexion)
+if ($user->verifyTwoFactorCode($recoveryCodeFromUser)) {
+    // Code de récupération valide - Connexion autorisée
+    // Le code est automatiquement consommé (ne peut plus être réutilisé)
+}
+
+// Obtenir les codes de récupération stockés (hachés)
+$storedCodes = $user->getRecoveryCodes();
+```
+
+## 🗄️ Nettoyage automatique
+
+### Commande manuelle
+
+```bash
+# Nettoyer tous les OTPs expirés et vieilles configurations 2FA
+php artisan mfa:cleanup
+
+# Forcer sans confirmation
+php artisan mfa:cleanup --force
+
+# Simuler (dry run) - voir ce qui serait supprimé
+php artisan mfa:cleanup --dry-run
+
+# Garder les OTPs expirés, ne nettoyer que les utilisés/vérifiés
+php artisan mfa:cleanup --keep-expired
+
+# Nettoyer uniquement les OTPs
+php artisan mfa:cleanup --otp-only
+
+# Nettoyer uniquement les configurations 2FA
+php artisan mfa:cleanup --totp-only
+
+# Filtrer par type d'OTP
+php artisan mfa:cleanup --type=email_verification
+
+# Jours de rétention personnalisés
+php artisan mfa:cleanup --days=15
+```
+
+### Configuration automatique
+
+Dans `config/mfa.php` :
+
+```php
+'cleanup' => [
+    'auto_cleanup' => env('MFA_CLEANUP_AUTO_CLEANUP', true),  // Nettoyage auto
+    'frequency' => env('MFA_CLEANUP_FREQUENCY', 60),          // Toutes les 60 minutes
+    'retention_days' => env('MFA_CLEANUP_RETENTION_DAYS', 30), // Rétention 30 jours
+],
+```
+
+## 🌍 Traductions
+
+### Configurer la langue
+
+Dans `.env` :
 
 ```env
-# .env
-OTP_DEFAULT_EXPIRY_MINUTES=10
-OTP_DEFAULT_MAX_ATTEMPTS=3
-OTP_AUTO_CLEANUP=true
-OTP_RATE_LIMIT_REQUESTS=3
-OTP_RATE_LIMIT_VERIFICATIONS=5
-OTP_LOCALE=fr
-OTP_FALLBACK_LOCALE=en
+MFA_OTP_LOCALE=fr    # Français
+# ou
+MFA_OTP_LOCALE=en    # Anglais
 ```
 
----
-
-## 📊 Structure de la base de données
-
-### Table `one_time_passwords`
-
-| Colonne | Type | Description |
-|---------|------|-------------|
-| `id` | bigint | Clé primaire |
-| `otpable_type` | string | Type du modèle (polymorphisme) |
-| `otpable_id` | bigint | ID du modèle |
-| `token_hash` | string(64) | Hash du code (bcrypt) |
-| `type` | string(50) | Type d'OTP (email_verification, login, 2fa, etc.) |
-| `destination` | string(255) | Destination (email, téléphone) |
-| `channels` | json | Canaux de livraison (['email'], ['sms'], etc.) |
-| `meta` | json | Métadonnées (IP, user_agent, etc.) |
-| `attempts` | integer | Tentatives de vérification |
-| `max_attempts` | integer | Maximum de tentatives autorisées |
-| `expires_at` | timestamp | Date d'expiration |
-| `verified_at` | timestamp | Date de vérification (nullable) |
-| `used_at` | timestamp | Date d'utilisation (nullable) |
-| `cancelled_at` | timestamp | Date d'annulation (nullable) |
-| `created_at` | timestamp | Date de création |
-| `updated_at` | timestamp | Date de mise à jour |
-
----
-
-## 🎯 Utilisation complète du trait `HasOneTimePasswords`
-
-### `sendOtp()` - Envoyer un OTP
+### Utiliser le helper de traduction
 
 ```php
-public function sendOtp(
-    string $type,
-    string $destination,
-    ?array $channels = null,
-    ?array $meta = null,
-    ?int $expiresInMinutes = null,
-    ?int $maxAttempts = null
-): OtpResponseData
+use Kani\Mfa\Core\Helpers\TranslationHelper;
+
+// Traduire un message
+$message = TranslationHelper::trans('messages.send_success');
+// Retourne: "Verification code sent successfully." ou "Code de vérification envoyé avec succès."
+
+// Avec placeholders
+$message = TranslationHelper::trans('messages.subject', ['app_name' => 'MyApp']);
+// Retourne: "Your verification code - MyApp"
 ```
 
-**Paramètres** :
+### Publier les fichiers de langue pour personnalisation
 
-| Paramètre | Type | Requis | Défaut | Description |
-|-----------|------|--------|--------|-------------|
-| `type` | string | Oui | - | Type d'OTP (email_verification, login, 2fa, etc.) |
-| `destination` | string | Oui | - | Adresse email ou numéro de téléphone |
-| `channels` | array|null | Non | `['mail']` | Canaux de livraison |
-| `meta` | array|null | Non | `null` | Métadonnées (IP, user_agent, etc.) |
-| `expiresInMinutes` | int|null | Non | `config('otp.default_expiry_minutes')` | Durée de validité en minutes |
-| `maxAttempts` | int|null | Non | `config('otp.default_max_attempts')` | Nombre maximum de tentatives |
-
-**Exemples** :
-
-```php
-// Exemple basique
-$response = $user->sendOtp('email_verification', $user->email);
-
-// Exemple avec canaux personnalisés
-$response = $user->sendOtp(
-    type: '2fa',
-    destination: $user->email,
-    channels: ['email', 'sms']
-);
-
-// Exemple avec métadonnées
-$response = $user->sendOtp(
-    type: 'delete_account',
-    destination: $user->email,
-    meta: [
-        'ip' => request()->ip(),
-        'user_agent' => request()->userAgent()
-    ]
-);
-
-// Exemple avec paramètres personnalisés
-$response = $user->sendOtp(
-    type: 'payment_confirmation',
-    destination: $user->email,
-    expiresInMinutes: 5,
-    maxAttempts: 2
-);
+```bash
+php artisan vendor:publish --tag=mfa-translations
 ```
 
-### `verifyOtp()` - Vérifier un OTP
+Les fichiers seront copiés dans `resources/lang/vendor/mfa/`.
+
+## 🎯 Exemples complets
+
+### Exemple 1 : Vérification d'email
 
 ```php
-public function verifyOtp(
-    string $code,
-    string $type,
-    string $destination,
-    bool $consume = true
-): OtpResponseData
-```
-
-**Paramètres** :
-
-| Paramètre | Type | Requis | Défaut | Description |
-|-----------|------|--------|--------|-------------|
-| `code` | string | Oui | - | Code saisi par l'utilisateur |
-| `type` | string | Oui | - | Type d'OTP (identique à sendOtp) |
-| `destination` | string | Oui | - | Destination (identique à sendOtp) |
-| `consume` | bool | Non | `true` | Marquer comme utilisé après vérification |
-
-**Exemples** :
-
-```php
-// Vérification simple
-$response = $user->verifyOtp('123456', 'login', $user->email);
-
-// Vérification sans consommation (pour 2FA)
-$response = $user->verifyOtp($code, '2fa', $user->email, consume: false);
-
-if ($response->isSuccess()) {
-    // Code valide, mais non consommé
-    session(['2fa_passed' => true]);
-}
-
-// Vérification avec consommation explicite
-$response = $user->verifyOtp($code, 'payment', $user->email, consume: true);
-```
-
-### `resendOtp()` - Renvoyer un OTP
-
-```php
-public function resendOtp(
-    string $type,
-    string $destination,
-    ?array $channels = null,
-    ?array $meta = null,
-    ?int $expiresInMinutes = null,
-    ?int $maxAttempts = null
-): OtpResponseData
-```
-
-**Comportement** :
-- Si un OTP existe en attente : il est annulé, un nouveau est créé
-- Si aucun OTP n'existe : équivalent à `sendOtp()`
-
-**Exemples** :
-
-```php
-// Renvoi simple
-$response = $user->resendOtp('email_verification', $user->email);
-
-// Renvoi avec canal différent (SMS au lieu d'email)
-$response = $user->resendOtp('login', $user->phone, channels: ['sms']);
-
-// Renvoi après expiration
-if ($verifyResponse->status->value === 'expired_code') {
-    $resendResponse = $user->resendOtp('login', $user->email);
-}
-```
-
-### `cancelOtps()` - Annuler des OTPs
-
-```php
-public function cancelOtps(string $type, string $destination): int
-```
-
-**Retour** : Nombre d'OTPs annulés
-
-**Exemples** :
-
-```php
-// Annuler tous les OTPs en attente pour un type et destination
-$cancelled = $user->cancelOtps('email_verification', $user->email);
-
-// Utilisation lors de la déconnexion
-public function logout(Request $request)
+// UserController.php
+public function sendVerification(Request $request)
 {
     $user = auth()->user();
     
-    // Annuler tous les OTPs en attente
-    $user->cancelOtps('login', $user->email);
-    $user->cancelOtps('2fa', $user->email);
+    $response = $user->sendOtp(
+        type: 'email_verification',
+        destination: $user->email
+    );
     
-    auth()->logout();
-    return redirect('/');
-}
-```
-
-### `getPendingOtp()` - Récupérer l'OTP en attente
-
-```php
-public function getPendingOtp(string $type, string $destination): ?OneTimePassword
-```
-
-**Exemple** :
-
-```php
-$pendingOtp = $user->getPendingOtp('email_verification', $user->email);
-
-if ($pendingOtp) {
-    $minutesLeft = now()->diffInMinutes($pendingOtp->expires_at);
-    echo "Il vous reste {$minutesLeft} minutes pour utiliser votre code";
-}
-```
-
-### `hasValidOtp()` - Vérifier si un OTP valide existe
-
-```php
-public function hasValidOtp(string $type, string $destination): bool
-```
-
-**Exemple** :
-
-```php
-if ($user->hasValidOtp('login', $user->email)) {
-    // Afficher le formulaire de saisie
-    return view('auth.verify-code');
-} else {
-    // Rediriger vers la demande de code
-    return redirect()->route('login.request-code');
-}
-```
-
-### `cleanupExpiredOtps()` - Nettoyer les OTPs expirés
-
-```php
-public function cleanupExpiredOtps(): int
-```
-
-**Exemple** :
-
-```php
-// Nettoyage manuel pour un utilisateur spécifique
-$deleted = $user->cleanupExpiredOtps();
-logger()->info("{$deleted} OTPs expirés supprimés pour l'utilisateur {$user->id}");
-```
-
-### `oneTimePasswords()` - Relation polymorphique
-
-```php
-public function oneTimePasswords(): MorphMany
-```
-
-**Exemple** :
-
-```php
-// Récupérer tous les OTPs d'un utilisateur
-$allOtps = $user->oneTimePasswords;
-
-// Récupérer uniquement les OTPs de connexion
-$loginOtps = $user->oneTimePasswords()
-    ->where('type', 'login')
-    ->get();
-
-// Compter les tentatives échouées
-$failedAttempts = $user->oneTimePasswords()
-    ->where('type', '2fa')
-    ->sum('attempts');
-```
-
----
-
-## 📊 Objet `OtpResponseData`
-
-Toutes les méthodes du package retournent un objet `OtpResponseData`.
-
-### Structure
-
-```php
-class OtpResponseData
-{
-    public readonly OtpStatus $status;
-    public readonly ?ErrorCode $errorCode;
-    public readonly ?string $message;
-    public readonly ?array $data;
+    if ($response->isSuccess()) {
+        return response()->json([
+            'message' => 'Code de vérification envoyé',
+            'expires_in' => $response->data['expires_in_minutes']
+        ]);
+    }
     
-    public function isSuccess(): bool;
-    public function isFailed(): bool;
-    public function toArray(): array;
+    return response()->json(['error' => $response->message], 429);
 }
-```
 
-### Énumération `OtpStatus`
-
-| Valeur | Signification |
-|--------|---------------|
-| `SUCCESS` | Opération réussie |
-| `FAILED` | Échec générique |
-| `RATE_LIMITED` | Trop de tentatives, attendre |
-| `INVALID_CODE` | Code OTP incorrect |
-| `EXPIRED_CODE` | Code OTP expiré |
-| `MAX_ATTEMPTS_EXCEEDED` | Trop de tentatives pour ce code |
-| `NOT_FOUND` | Aucun OTP trouvé |
-| `SEND_FAILED` | Échec de l'envoi |
-| `RESEND_FAILED` | Échec du renvoi |
-
-### Énumération `ErrorCode`
-
-| Valeur | Code HTTP | Message |
-|--------|-----------|---------|
-| `RATE_LIMIT_EXCEEDED` | 429 | Trop de tentatives |
-| `OTP_NOT_FOUND` | 404 | Code OTP introuvable |
-| `INVALID_OTP` | 422 | Code invalide |
-| `MAX_ATTEMPTS_EXCEEDED` | 422 | Nombre max de tentatives dépassé |
-| `OTP_SEND_FAILED` | 500 | Échec de l'envoi |
-| `OTP_RESEND_FAILED` | 500 | Échec du renvoi |
-| `OTP_EXPIRED` | 422 | Code expiré |
-
-### Utilisation dans un contrôleur
-
-```php
-public function verify(Request $request)
+public function verifyEmail(Request $request)
 {
     $user = auth()->user();
     
@@ -578,621 +456,262 @@ public function verify(Request $request)
     );
     
     if ($response->isSuccess()) {
-        return redirect()->route('dashboard')
-            ->with('success', $response->message);
+        $user->email_verified_at = now();
+        $user->save();
+        
+        return response()->json(['message' => 'Email vérifié avec succès']);
     }
     
-    // Adaptation du message selon le status
-    $errorMessage = match($response->status->value) {
-        'invalid_code' => 'Code incorrect',
-        'expired_code' => 'Code expiré, veuillez en demander un nouveau',
-        'max_attempts_exceeded' => 'Trop de tentatives, demandez un nouveau code',
-        'rate_limited' => 'Trop de tentatives, réessayez plus tard',
-        default => $response->message
-    };
-    
-    return back()
-        ->with('error', $errorMessage)
-        ->with('remaining_attempts', $response->data['remaining_attempts'] ?? null);
+    return response()->json(['error' => $response->message], 422);
 }
 ```
 
----
-
-## 🌍 Localisation et multi-langues
-
-### Configuration des langues
+### Exemple 2 : Authentification à deux facteurs complète
 
 ```php
-// config/otp.php
-'localization' => [
-    'locale' => env('OTP_LOCALE', 'fr'),
-    'supported_locales' => ['fr', 'en'],
-    'fallback_locale' => env('OTP_FALLBACK_LOCALE', 'en'),
-],
+// TwoFactorController.php
+class TwoFactorController extends Controller
+{
+    public function showSetup()
+    {
+        $user = auth()->user();
+        
+        // Obtenir ou créer le secret
+        $secret = $user->getTwoFactorSecret();
+        
+        // Générer l'URI du QR code
+        $qrCodeUri = $user->getTwoFactorQrCodeUri();
+        
+        // Générer un QR code (utilisez votre bibliothèque préférée)
+        $qrCode = QrCode::size(200)->generate($qrCodeUri);
+        
+        return view('2fa.setup', compact('qrCode', 'secret'));
+    }
+    
+    public function enable(Request $request)
+    {
+        $user = auth()->user();
+        
+        $request->validate([
+            'code' => 'required|string|size:6'
+        ]);
+        
+        if ($user->enableTwoFactor($request->code)) {
+            // Générer et montrer les codes de récupération
+            $recoveryCodes = $user->generateRecoveryCodes();
+            
+            return view('2fa.recovery-codes', compact('recoveryCodes'));
+        }
+        
+        return back()->withErrors(['code' => 'Code invalide']);
+    }
+    
+    public function disable()
+    {
+        $user = auth()->user();
+        $user->disableTwoFactor();
+        
+        return redirect()->route('profile')->with('success', '2FA désactivée');
+    }
+    
+    public function verify(Request $request)
+    {
+        $user = auth()->user();
+        
+        if ($user->verifyTwoFactorCode($request->code)) {
+            // Stocker en session que le 2FA est vérifié
+            session(['2fa_verified' => true]);
+            
+            return redirect()->intended('/dashboard');
+        }
+        
+        return back()->withErrors(['code' => 'Code invalide']);
+    }
+    
+    public function showRecovery()
+    {
+        $user = auth()->user();
+        
+        if (!$user->isTwoFactorEnabled()) {
+            return redirect()->route('login');
+        }
+        
+        return view('2fa.recovery');
+    }
+    
+    public function verifyRecovery(Request $request)
+    {
+        $user = auth()->user();
+        
+        if ($user->verifyTwoFactorCode($request->code)) {
+            session(['2fa_verified' => true]);
+            
+            // Optionnel : régénérer de nouveaux codes
+            $newCodes = $user->generateRecoveryCodes();
+            
+            return redirect()->intended('/dashboard');
+        }
+        
+        return back()->withErrors(['code' => 'Code de récupération invalide']);
+    }
+}
 ```
 
-```env
-# .env
-OTP_LOCALE=fr
-OTP_FALLBACK_LOCALE=en
-```
-
-### Utilisation du helper `TranslationHelper`
+### Exemple 3 : Middleware pour protection 2FA
 
 ```php
-use Kani\Mfa\Helpers\TranslationHelper;
+// app/Http/Middleware/RequireTwoFactor.php
+namespace App\Http\Middleware;
 
-// Traduire un message
-$message = TranslationHelper::trans('messages.send_success');
-// → "Code de vérification envoyé avec succès." (en français)
+use Closure;
 
-// Avec placeholders
-$message = TranslationHelper::trans('messages.expires_in', ['minutes' => 5]);
-// → "Ce code expirera dans 5 minute(s)."
-```
+class RequireTwoFactor
+{
+    public function handle($request, Closure $next)
+    {
+        $user = auth()->user();
+        
+        // Si 2FA est activée et non vérifiée dans cette session
+        if ($user && $user->isTwoFactorEnabled() && !session('2fa_verified')) {
+            return redirect()->route('2fa.verify');
+        }
+        
+        return $next($request);
+    }
+}
 
-### Messages disponibles
-
-| Clé | Description |
-|-----|-------------|
-| `messages.send_success` | Code envoyé avec succès |
-| `messages.resend_success` | Code renvoyé avec succès |
-| `messages.verify_success` | Code vérifié avec succès |
-| `messages.send_failed` | Échec de l'envoi |
-| `messages.resend_failed` | Échec du renvoi |
-| `messages.otp_not_found` | Code introuvable |
-| `messages.expired_code` | Code expiré |
-| `messages.max_attempts_exceeded` | Trop de tentatives |
-| `messages.invalid_code_attempts_remaining` | Code invalide, X tentatives restantes |
-| `messages.rate_limited` | Trop de tentatives, patienter X secondes |
-| `messages.subject` | Sujet de l'email |
-| `messages.greeting` | Formule de salutation |
-| `messages.intro` | Introduction de l'email |
-| `messages.expires_in` | Message d'expiration |
-| `messages.ignore_request` | Message si non demandé |
-| `messages.salutation` | Formule de politesse |
-
-### Ajouter une nouvelle langue
-
-```bash
-# 1. Créer le dossier
-mkdir -p resources/lang/vendor/otp/es
-
-# 2. Copier les fichiers depuis l'anglais
-cp vendor/andydefer/laravel-otp/src/Lang/en/messages.php resources/lang/vendor/otp/es/
-
-# 3. Traduire les valeurs
-# resources/lang/vendor/otp/es/messages.php
-
-# 4. Mettre à jour la configuration
-'localization' => [
-    'supported_locales' => ['fr', 'en', 'es'],
+// Dans Kernel.php
+protected $routeMiddleware = [
     // ...
-]
-```
-
----
-
-## 🎨 Personnalisation
-
-### Remplacer le générateur de code
-
-**Étape 1 : Créer votre générateur**
-
-```php
-// app/Services/CustomCodeGenerator.php
-
-namespace App\Services;
-
-use Kani\Mfa\Contracts\CodeGeneratorInterface;
-
-class CustomCodeGenerator implements CodeGeneratorInterface
-{
-    public function generate(): string
-    {
-        // Code alphanumérique de 8 caractères
-        return substr(bin2hex(random_bytes(4)), 0, 8);
-    }
-}
-```
-
-**Étape 2 : Enregistrer dans le service provider**
-
-```php
-// app/Providers/AppServiceProvider.php
-
-use App\Services\CustomCodeGenerator;
-use Kani\Mfa\Contracts\CodeGeneratorInterface;
-
-public function register()
-{
-    $this->app->bind(CodeGeneratorInterface::class, CustomCodeGenerator::class);
-}
-```
-
-### Remplacer le rate limiter
-
-**Étape 1 : Créer votre rate limiter**
-
-```php
-// app/Services/RedisRateLimiter.php
-
-namespace App\Services;
-
-use Illuminate\Support\Facades\Redis;
-use Kani\Mfa\Contracts\RateLimiterInterface;
-
-class RedisRateLimiter implements RateLimiterInterface
-{
-    public function isExceeded(string $key, int $maxAttempts): bool
-    {
-        return Redis::get($key) >= $maxAttempts;
-    }
-    
-    public function hit(string $key, int $decaySeconds): void
-    {
-        Redis::incr($key);
-        Redis::expire($key, $decaySeconds);
-    }
-    
-    public function getAvailableInSeconds(string $key): int
-    {
-        return Redis::ttl($key);
-    }
-    
-    public function clear(string $key): void
-    {
-        Redis::del($key);
-    }
-}
-```
-
-**Étape 2 : Enregistrer**
-
-```php
-$this->app->bind(RateLimiterInterface::class, RedisRateLimiter::class);
-```
-
-### Définir des canaux personnalisés avec `MustOtpChannels`
-
-```php
-// app/Models/User.php
-
-use Kani\Mfa\Contracts\MustOtpChannels;
-
-class User extends Authenticatable implements MustOtpChannels
-{
-    use HasOneTimePasswords;
-    
-    public function getOtpChannels(): array
-    {
-        $channels = ['mail'];
-        
-        if ($this->phone_verified_at) {
-            $channels[] = 'sms';
-        }
-        
-        if ($this->whatsapp_phone) {
-            $channels[] = 'whatsapp';
-        }
-        
-        return $channels;
-    }
-}
-```
-
----
-
-## 🖥️ Commandes Artisan
-
-### `otp:install` - Installer le package
-
-```bash
-php artisan otp:install
-php artisan otp:install --force          # Forcer l'écrasement
-php artisan otp:install --no-migrate     # Ne pas exécuter les migrations
-```
-
-### `otp:cleanup` - Nettoyer les OTPs obsolètes
-
-```bash
-# Nettoyage basique (demande confirmation)
-php artisan otp:cleanup
-
-# Forcer sans confirmation
-php artisan otp:cleanup --force
-
-# Simulation (ne supprime rien)
-php artisan otp:cleanup --dry-run
-
-# Garder les codes expirés, supprimer seulement les anciens
-php artisan otp:cleanup --keep-expired
-
-# Supprimer les OTPs de plus de 15 jours
-php artisan otp:cleanup --days=15
-
-# Supprimer uniquement les OTPs d'un certain type
-php artisan otp:cleanup --type=email_verification
-
-# Combinaison d'options
-php artisan otp:cleanup --force --type=login --days=7
-```
-
-**Exemple de sortie** :
-
-```
-🧹 Starting OTP cleanup...
-
-⚠️  This will permanently delete expired and old OTPs. Do you wish to continue? (yes/no) [no]:
- > yes
-
-🗄️ Running migrations...
-   ✅ Migrations completed successfully.
-
-═══════════════════════════════════════════════════════
-🧹 OTP CLEANUP COMPLETED
-═══════════════════════════════════════════════════════
-┌─────────────────────────────┬───────┐
-│ Metric                      │ Count │
-├─────────────────────────────┼───────┤
-│ Expired OTPs deleted        │ 12    │
-│ Verified OTPs deleted       │ 5     │
-│ Used OTPs deleted           │ 3     │
-│ Cancelled OTPs deleted      │ 0     │
-├─────────────────────────────┼───────┤
-│ Total OTPs deleted          │ 20    │
-└─────────────────────────────┴───────┘
-
-✅ Cleanup completed successfully!
-
-📋 Current Configuration:
-   • Retention period: 30 days
-   • Expired OTPs: ✅ Removed
-```
-
----
-
-## 🔧 Intégration avec d'autres canaux (SMS, WhatsApp)
-
-### Créer une notification SMS personnalisée
-
-```php
-// app/Notifications/SmsOtpNotification.php
-
-namespace App\Notifications;
-
-use Illuminate\Notifications\Notification;
-use Kani\Mfa\Models\OneTimePassword;
-
-class SmsOtpNotification extends Notification
-{
-    public function __construct(
-        private OneTimePassword $otp,
-        private string $plainCode
-    ) {}
-
-    public function via($notifiable): array
-    {
-        return ['vonage']; // ou 'twilio'
-    }
-
-    public function toVonage($notifiable)
-    {
-        $expiresIn = $this->otp->expires_at->diffInMinutes(now());
-        
-        return (new VonageMessage)
-            ->content("Votre code OTP : {$this->plainCode}. Valable {$expiresIn} minutes.");
-    }
-}
-```
-
-### Étendre la notification principale
-
-```php
-// app/Notifications/CustomOtpNotification.php
-
-namespace App\Notifications;
-
-use Kani\Mfa\Notifications\OtpNotification as BaseOtpNotification;
-
-class CustomOtpNotification extends BaseOtpNotification
-{
-    public function via($notifiable): array
-    {
-        // Déterminer les canaux dynamiquement
-        $channels = ['mail'];
-        
-        if ($notifiable->hasPhone()) {
-            $channels[] = 'vonage';
-        }
-        
-        if ($notifiable->prefersWhatsApp()) {
-            $channels[] = 'whatsapp';
-        }
-        
-        return $channels;
-    }
-    
-    public function toVonage($notifiable)
-    {
-        // Format SMS
-        return (new VonageMessage)
-            ->content("Code: {$this->plainCode}");
-    }
-    
-    public function toWhatsApp($notifiable)
-    {
-        // Format WhatsApp
-        return (new WhatsAppMessage)
-            ->content("*Votre code* : {$this->plainCode}");
-    }
-}
-```
-
-### Enregistrer la notification personnalisée
-
-```php
-// config/otp.php
-'notification' => App\Notifications\CustomOtpNotification::class,
-```
-
----
-
-## 🧪 Tests
-
-### Tester l'envoi d'OTP
-
-```php
-<?php
-
-namespace Tests\Feature;
-
-use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Notification;
-use Tests\TestCase;
-
-class OtpTest extends TestCase
-{
-    use RefreshDatabase;
-    
-    public function test_user_can_request_an_otp()
-    {
-        Notification::fake();
-        
-        $user = User::factory()->create();
-        
-        $response = $this->actingAs($user)
-            ->post('/send-otp', ['type' => 'email_verification']);
-        
-        $response->assertStatus(200);
-        $this->assertDatabaseHas('one_time_passwords', [
-            'otpable_id' => $user->id,
-            'type' => 'email_verification',
-        ]);
-    }
-    
-    public function test_user_can_verify_an_otp()
-    {
-        $user = User::factory()->create();
-        
-        // Créer un OTP en base
-        $otp = $user->oneTimePasswords()->create([
-            'token_hash' => Hash::make('123456'),
-            'type' => 'login',
-            'destination' => $user->email,
-            'expires_at' => now()->addMinutes(10),
-        ]);
-        
-        $response = $this->post('/verify-otp', [
-            'code' => '123456',
-            'type' => 'login',
-            'destination' => $user->email
-        ]);
-        
-        $response->assertStatus(200);
-        $this->assertNotNull($otp->fresh()->verified_at);
-    }
-    
-    public function test_resend_otp_cancels_old_one()
-    {
-        $user = User::factory()->create();
-        
-        // Premier OTP
-        $firstOtp = $user->oneTimePasswords()->create([
-            'token_hash' => Hash::make('123456'),
-            'type' => 'login',
-            'destination' => $user->email,
-            'expires_at' => now()->addMinutes(10),
-        ]);
-        
-        // Demande de renvoi
-        $this->actingAs($user)->post('/resend-otp', [
-            'type' => 'login',
-            'destination' => $user->email
-        ]);
-        
-        $firstOtp->refresh();
-        $this->assertNotNull($firstOtp->cancelled_at);
-        $this->assertEquals(2, $user->oneTimePasswords()->count());
-    }
-}
-```
-
----
-
-## 📝 Exemple complet : Vérification d'email
-
-### Routes
-
-```php
-// routes/web.php
-
-Route::middleware('auth')->group(function () {
-    Route::get('/verify-email', [EmailVerificationController::class, 'showForm'])
-        ->name('verification.form');
-    
-    Route::post('/verify-email/send', [EmailVerificationController::class, 'sendCode'])
-        ->name('verification.send');
-    
-    Route::post('/verify-email/verify', [EmailVerificationController::class, 'verifyCode'])
-        ->name('verification.verify');
-    
-    Route::post('/verify-email/resend', [EmailVerificationController::class, 'resendCode'])
-        ->name('verification.resend');
+    '2fa' => \App\Http\Middleware\RequireTwoFactor::class,
+];
+
+// Dans web.php
+Route::middleware(['auth', '2fa'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+    // Routes protégées par 2FA...
 });
 ```
 
-### Contrôleur
+## 🧪 Test du package
+
+Le package inclut une suite complète de tests. Pour les exécuter :
+
+```bash
+composer test
+```
+
+Ou avec PHPUnit directement :
+
+```bash
+./vendor/bin/phpunit
+```
+
+## 📊 API Reference
+
+### Trait `HasOneTimePasswords`
+
+| Méthode | Paramètres | Retour | Description |
+|---------|------------|--------|-------------|
+| `sendOtp()` | `string $type, string $destination, ?array $channels, ?array $meta, ?int $expiresInMinutes, ?int $maxAttempts` | `OtpResponseData` | Envoie un nouvel OTP |
+| `resendOtp()` | `string $type, string $destination, ?array $channels, ?array $meta, ?int $expiresInMinutes, ?int $maxAttempts` | `OtpResponseData` | Renvoie un OTP |
+| `verifyOtp()` | `string $code, string $type, string $destination, bool $consume = true` | `OtpResponseData` | Vérifie un OTP |
+| `cancelOtps()` | `string $type, string $destination` | `int` | Annule les OTPs en attente |
+| `hasValidOtp()` | `string $type, string $destination` | `bool` | Vérifie si un OTP valide existe |
+| `getPendingOtp()` | `string $type, string $destination` | `?OneTimePassword` | Récupère l'OTP en attente |
+| `cleanupExpiredOtps()` | - | `int` | Nettoie les OTPs expirés |
+
+### Trait `HasTwoFactorAuthentication`
+
+| Méthode | Paramètres | Retour | Description |
+|---------|------------|--------|-------------|
+| `getTwoFactorSecret()` | - | `TwoFactorSecret` | Obtient ou crée un secret TOTP |
+| `isTwoFactorEnabled()` | - | `bool` | Vérifie si la 2FA est activée |
+| `enableTwoFactor()` | `string $code` | `bool` | Active la 2FA avec vérification du code |
+| `disableTwoFactor()` | - | `bool` | Désactive la 2FA |
+| `verifyTwoFactorCode()` | `string $code` | `bool` | Vérifie un code TOTP ou de récupération |
+| `getTwoFactorQrCodeUri()` | - | `string` | URI du QR code pour Google Authenticator |
+| `generateRecoveryCodes()` | - | `array` | Génère de nouveaux codes de récupération |
+| `getRecoveryCodes()` | - | `array` | Récupère les codes de récupération stockés |
+
+### Types de réponse `OtpResponseData`
 
 ```php
-<?php
+$response = $user->sendOtp(...);
 
-namespace App\Http\Controllers;
+// Méthodes
+$response->isSuccess();  // bool
+$response->isFailed();   // bool
+$response->toArray();    // array
 
-use App\Models\User;
-use Illuminate\Http\Request;
-
-class EmailVerificationController extends Controller
-{
-    public function showForm()
-    {
-        $user = auth()->user();
-        
-        // Vérifier si un OTP est déjà en attente
-        $hasPendingOtp = $user->hasValidOtp('email_verification', $user->email);
-        
-        return view('auth.verify-email', compact('hasPendingOtp'));
-    }
-    
-    public function sendCode()
-    {
-        $user = auth()->user();
-        
-        $response = $user->sendOtp(
-            type: 'email_verification',
-            destination: $user->email,
-            meta: ['ip' => request()->ip()]
-        );
-        
-        if ($response->isSuccess()) {
-            return redirect()->route('verification.form')
-                ->with('success', 'Un code de vérification a été envoyé.');
-        }
-        
-        return back()->with('error', $response->message);
-    }
-    
-    public function verifyCode(Request $request)
-    {
-        $request->validate(['code' => 'required|string|size:6']);
-        
-        $user = auth()->user();
-        
-        $response = $user->verifyOtp(
-            code: $request->code,
-            type: 'email_verification',
-            destination: $user->email,
-            consume: true
-        );
-        
-        if ($response->isSuccess()) {
-            $user->markEmailAsVerified();
-            return redirect()->route('dashboard')
-                ->with('success', 'Email vérifié avec succès !');
-        }
-        
-        return back()
-            ->with('error', $response->message)
-            ->with('remaining_attempts', $response->data['remaining_attempts'] ?? null);
-    }
-    
-    public function resendCode()
-    {
-        $user = auth()->user();
-        
-        $response = $user->resendOtp('email_verification', $user->email);
-        
-        if ($response->isSuccess()) {
-            return back()->with('success', 'Un nouveau code a été envoyé.');
-        }
-        
-        return back()->with('error', $response->message);
-    }
-}
+// Propriétés
+$response->status;       // OtpStatus enum
+$response->errorCode;    // ErrorCode|null
+$response->message;      // string|null
+$response->data;         // array|null
 ```
 
-### Vue Blade
+### Enums
 
-```blade
-{{-- resources/views/auth/verify-email.blade.php --}}
+**OtpStatus**: `SUCCESS`, `FAILED`, `RATE_LIMITED`, `INVALID_CODE`, `EXPIRED_CODE`, `MAX_ATTEMPTS_EXCEEDED`, `NOT_FOUND`, `SEND_FAILED`, `RESEND_FAILED`
 
-@extends('layouts.app')
+**ErrorCode**: `RATE_LIMIT_EXCEEDED`, `OTP_NOT_FOUND`, `INVALID_OTP`, `MAX_ATTEMPTS_EXCEEDED`, `OTP_SEND_FAILED`, `OTP_RESEND_FAILED`, `OTP_EXPIRED`
 
-@section('content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">Vérification d'email</div>
-                
-                <div class="card-body">
-                    @if(session('success'))
-                        <div class="alert alert-success">{{ session('success') }}</div>
-                    @endif
-                    
-                    @if(session('error'))
-                        <div class="alert alert-danger">{{ session('error') }}</div>
-                    @endif
-                    
-                    <p>Un code de vérification a été envoyé à <strong>{{ auth()->user()->email }}</strong>.</p>
-                    
-                    <form method="POST" action="{{ route('verification.verify') }}">
-                        @csrf
-                        
-                        <div class="mb-3">
-                            <label for="code" class="form-label">Code de vérification</label>
-                            <input type="text" class="form-control @error('code') is-invalid @enderror" 
-                                   id="code" name="code" maxlength="6" required>
-                            @error('code')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary w-100">Vérifier</button>
-                    </form>
-                    
-                    <hr>
-                    
-                    <form method="POST" action="{{ route('verification.resend') }}">
-                        @csrf
-                        <button type="submit" class="btn btn-link w-100">
-                            Renvoyer le code
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-@endsection
+## 🔒 Sécurité
+
+- Les codes OTP sont hachés avec `Hash::make()` avant stockage
+- Les codes de récupération sont hachés avec SHA-256 (ou configurable)
+- Rate limiting intégré pour prévenir les attaques par force brute
+- Fenêtre de validation TOTP configurable pour tolérer le décalage horaire
+- Utilisation de `hash_equals()` pour les comparaisons résistantes aux timing attacks
+- Génération cryptographique sécurisée avec `random_int()`
+
+## 🐛 Dépannage
+
+### Problème : Les emails OTP ne sont pas envoyés
+
+**Solution** : Vérifiez la configuration mail de Laravel et que votre modèle implémente `Notifiable`.
+
+### Problème : QR code non scannable
+
+**Solution** : Assurez-vous que la configuration `issuer` dans `mfa.totp.issuer` ne contient pas d'espaces ou caractères spéciaux.
+
+### Problème : Codes 2FA invalides
+
+**Solution** : Augmentez la fenêtre de validation `window` dans la configuration TOTP (ex: `window=2` pour tolérer ±60 secondes).
+
+### Problème : Translations non chargées
+
+**Solution** : Publiez et personnalisez les fichiers de langue :
+```bash
+php artisan vendor:publish --tag=mfa-translations --force
 ```
 
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! Veuillez :
+
+1. Fork le projet
+2. Créer une branche (`git checkout -b feature/amazing-feature`)
+3. Commiter vos changements (`git commit -m 'feat: add amazing feature'`)
+4. Pusher (`git push origin feature/amazing-feature`)
+5. Ouvrir une Pull Request
+
+## 📄 License
+
+MIT License - voir le fichier [LICENSE](LICENSE) pour plus de détails.
+
+## 🙏 Crédits
+
+- [OTPHP](https://github.com/Spomky-Labs/otphp) - Bibliothèque TOTP
+- [BaconQrCode](https://github.com/Bacon/BaconQrCode) - Générateur de QR codes
+- [ParagonIE Constant Time Encoding](https://github.com/paragonie/constant_time_encoding) - Encodage Base32 sécurisé
+
+## 📞 Support
+
+- Documentation : [https://github.com/andydefer/laravel-mfa](https://github.com/andydefer/laravel-mfa)
+- Issues : [https://github.com/andydefer/laravel-mfa/issues](https://github.com/andydefer/laravel-mfa/issues)
+
 ---
 
-## 🔗 Liens utiles
-
-- [Dépôt GitHub](https://github.com/andydefer/laravel-otp)
-- [Signalement de bugs](https://github.com/andydefer/laravel-otp/issues)
-- [Documentation API](https://github.com/andydefer/laravel-otp/wiki)
-
----
-
-## 📄 Licence
-
-MIT © [Kani](https://github.com/andydefer)
-
----
-
-**Laravel OTP** – La solution complète pour la gestion de mots de passe à usage unique dans Laravel, avec support multi-modèles, multi-langues, rate limiting, et nettoyage automatique. 🔐⚡
+**Fait avec ❤️ pour la communauté Laravel**

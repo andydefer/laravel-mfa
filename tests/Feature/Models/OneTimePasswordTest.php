@@ -1,4 +1,5 @@
 <?php
+
 // tests/Feature/Models/OneTimePasswordTest.php
 
 declare(strict_types=1);
@@ -16,14 +17,13 @@ use Kani\Mfa\Tests\TestCase;
  *
  * Validates all model functionality including state management,
  * verification logic, expiration handling, and polymorphic relationships.
- *
- * @package Kani\Mfa\Tests\Feature\Models
  */
 final class OneTimePasswordTest extends TestCase
 {
     use RefreshDatabase;
 
     private array $validAttributes;
+
     private string $plainCode;
 
     /**

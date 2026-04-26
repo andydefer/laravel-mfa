@@ -21,14 +21,16 @@ use Mockery;
 final class MfaInstallerServiceTest extends TestCase
 {
     private MfaInstallerService $installerService;
+
     private Command $command;
+
     private string $configPath;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->installerService = new MfaInstallerService();
+        $this->installerService = new MfaInstallerService;
         $this->command = Mockery::mock(Command::class);
         $this->configPath = config_path('mfa.php');
 
@@ -77,11 +79,11 @@ final class MfaInstallerServiceTest extends TestCase
     {
         $migrationsDir = database_path('migrations');
 
-        if (!File::exists($migrationsDir)) {
+        if (! File::exists($migrationsDir)) {
             return;
         }
 
-        foreach (glob($migrationsDir . '/*.php') as $migrationFile) {
+        foreach (glob($migrationsDir.'/*.php') as $migrationFile) {
             File::delete($migrationFile);
         }
     }
@@ -243,7 +245,7 @@ final class MfaInstallerServiceTest extends TestCase
     public function test_migrations_are_skipped_when_tables_already_exist(): void
     {
         // Arrange: Create OTP table to simulate existing installation
-        if (!Schema::hasTable('one_time_passwords')) {
+        if (! Schema::hasTable('one_time_passwords')) {
             Schema::create('one_time_passwords', function ($table): void {
                 $table->id();
                 $table->timestamps();
@@ -337,7 +339,7 @@ final class MfaInstallerServiceTest extends TestCase
     public function test_totp_migrations_are_skipped_when_tables_already_exist(): void
     {
         // Arrange: Create TOTP table to simulate existing installation
-        if (!Schema::hasTable('two_factor_secrets')) {
+        if (! Schema::hasTable('two_factor_secrets')) {
             Schema::create('two_factor_secrets', function ($table): void {
                 $table->id();
                 $table->morphs('authenticatable');
@@ -515,7 +517,7 @@ final class MfaInstallerServiceTest extends TestCase
     public function test_has_otp_tables_returns_true_when_tables_exist(): void
     {
         // Arrange: Create OTP table
-        if (!Schema::hasTable('one_time_passwords')) {
+        if (! Schema::hasTable('one_time_passwords')) {
             Schema::create('one_time_passwords', function ($table): void {
                 $table->id();
                 $table->timestamps();
@@ -558,7 +560,7 @@ final class MfaInstallerServiceTest extends TestCase
     public function test_has_totp_tables_returns_true_when_tables_exist(): void
     {
         // Arrange: Create TOTP table
-        if (!Schema::hasTable('two_factor_secrets')) {
+        if (! Schema::hasTable('two_factor_secrets')) {
             Schema::create('two_factor_secrets', function ($table): void {
                 $table->id();
                 $table->morphs('authenticatable');

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Kani\Mfa\Totp\Models;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Kani\Mfa\Totp\Services\TOTPService;
@@ -24,10 +25,10 @@ use Kani\Mfa\Totp\Services\TOTPService;
  * @property array|null $recovery_codes
  * @property array|null $meta
  * @property bool $is_enabled
- * @property \Carbon\CarbonImmutable|null $confirmed_at
- * @property \Carbon\CarbonImmutable|null $last_used_at
- * @property \Carbon\CarbonImmutable $created_at
- * @property \Carbon\CarbonImmutable $updated_at
+ * @property CarbonImmutable|null $confirmed_at
+ * @property CarbonImmutable|null $last_used_at
+ * @property CarbonImmutable $created_at
+ * @property CarbonImmutable $updated_at
  */
 class TwoFactorSecret extends Model
 {
@@ -73,8 +74,6 @@ class TwoFactorSecret extends Model
 
     /**
      * Get the parent authenticatable model (polymorphic relationship).
-     *
-     * @return MorphTo
      */
     public function authenticatable(): MorphTo
     {
@@ -151,7 +150,7 @@ class TwoFactorSecret extends Model
      *
      * Preserves the '@' symbol for email addresses while encoding other special characters.
      *
-     * @param string $label The label to encode
+     * @param  string  $label  The label to encode
      * @return string Encoded label safe for URI usage
      */
     private function encodeLabelForUri(string $label): string
@@ -165,8 +164,8 @@ class TwoFactorSecret extends Model
      * Uses the TOTP service to validate the provided code against the current
      * time window, accounting for clock drift.
      *
-     * @param string $code The 6-8 digit code from Google Authenticator
-     * @param int $window Number of time periods to check (default: 1 = ±30 seconds)
+     * @param  string  $code  The 6-8 digit code from Google Authenticator
+     * @param  int  $window  Number of time periods to check (default: 1 = ±30 seconds)
      * @return bool True if the code is valid, false otherwise
      */
     public function verifyCode(string $code, int $window = 1): bool
@@ -183,8 +182,8 @@ class TwoFactorSecret extends Model
      * the user loses access to their authenticator app. Codes are stored
      * as SHA-256 hashes for security.
      *
-     * @param int|null $count Number of recovery codes to generate (uses config if null)
-     * @param int|null $length Length of each recovery code (uses config if null)
+     * @param  int|null  $count  Number of recovery codes to generate (uses config if null)
+     * @param  int|null  $length  Length of each recovery code (uses config if null)
      * @return array<int, string> Array of plain text recovery codes (show once to user)
      */
     public function generateRecoveryCodes(?int $count = null, ?int $length = null): array
@@ -232,7 +231,7 @@ class TwoFactorSecret extends Model
      *
      * Creates a code using only unambiguous characters to prevent user confusion.
      *
-     * @param int $length Length of the recovery code
+     * @param  int  $length  Length of the recovery code
      * @return string Randomly generated recovery code
      */
     private function generateSingleRecoveryCode(int $length): string
@@ -252,7 +251,7 @@ class TwoFactorSecret extends Model
     /**
      * Hash a recovery code using the configured algorithm.
      *
-     * @param string $plainCode The plain text recovery code
+     * @param  string  $plainCode  The plain text recovery code
      * @return string Hashed recovery code
      */
     private function hashRecoveryCode(string $plainCode): string
@@ -269,8 +268,8 @@ class TwoFactorSecret extends Model
     /**
      * Verify a recovery code hash against the plain code.
      *
-     * @param string $plainCode The plain text code to verify
-     * @param string $hashedCode The stored hash to compare against
+     * @param  string  $plainCode  The plain text code to verify
+     * @param  string  $hashedCode  The stored hash to compare against
      * @return bool True if the code matches the hash
      */
     private function verifyRecoveryCodeHash(string $plainCode, string $hashedCode): bool
@@ -290,7 +289,7 @@ class TwoFactorSecret extends Model
      * Checks if the provided code matches any stored recovery code hash.
      * If a match is found, the code is removed (consumed) and cannot be used again.
      *
-     * @param string $code The recovery code to verify
+     * @param  string  $code  The recovery code to verify
      * @return bool True if code is valid and was consumed, false otherwise
      */
     public function verifyRecoveryCode(string $code): bool
@@ -313,7 +312,7 @@ class TwoFactorSecret extends Model
     /**
      * Remove a recovery code at the specified index.
      *
-     * @param int $index The index of the recovery code to remove
+     * @param  int  $index  The index of the recovery code to remove
      */
     private function removeRecoveryCodeAtIndex(int $index): void
     {

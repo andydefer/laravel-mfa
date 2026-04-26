@@ -1,4 +1,5 @@
 <?php
+
 // tests/Unit/Commands/CleanupMfaCommandTest.php
 
 declare(strict_types=1);
@@ -8,17 +9,16 @@ namespace Kani\Mfa\Tests\Unit\Commands;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Kani\Mfa\Core\Commands\CleanupMfaCommand;
 use Kani\Mfa\Otp\Models\OneTimePassword;
-use Kani\Mfa\Totp\Services\TOTPService;
 use Kani\Mfa\Tests\TestCase;
+use Kani\Mfa\Totp\Services\TOTPService;
 
 /**
  * Test suite for the CleanupMfaCommand.
  *
  * Validates that the MFA cleanup command properly removes expired OTPs,
  * old verified/used/cancelled OTPs, and old 2FA secrets from the database.
- *
- * @package Kani\Mfa\Tests\Unit\Commands
  */
 final class CleanupMfaCommandTest extends TestCase
 {
@@ -29,7 +29,7 @@ final class CleanupMfaCommandTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->totpService = new TOTPService();
+        $this->totpService = new TOTPService;
     }
 
     /**
@@ -38,10 +38,10 @@ final class CleanupMfaCommandTest extends TestCase
     public function test_command_can_be_instantiated(): void
     {
         // Act
-        $command = $this->app->make(\Kani\Mfa\Core\Commands\CleanupMfaCommand::class);
+        $command = $this->app->make(CleanupMfaCommand::class);
 
         // Assert
-        $this->assertInstanceOf(\Kani\Mfa\Core\Commands\CleanupMfaCommand::class, $command);
+        $this->assertInstanceOf(CleanupMfaCommand::class, $command);
     }
 
     /**
@@ -50,7 +50,7 @@ final class CleanupMfaCommandTest extends TestCase
     public function test_command_has_correct_signature(): void
     {
         // Act
-        $command = $this->app->make(\Kani\Mfa\Core\Commands\CleanupMfaCommand::class);
+        $command = $this->app->make(CleanupMfaCommand::class);
 
         // Assert
         $this->assertEquals('mfa:cleanup', $command->getName());

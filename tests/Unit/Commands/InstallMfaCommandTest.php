@@ -1,4 +1,5 @@
 <?php
+
 // tests/Unit/Commands/InstallMfaCommandTest.php
 
 declare(strict_types=1);
@@ -26,7 +27,7 @@ final class InstallMfaCommandTest extends TestCase
     public function test_command_can_be_instantiated(): void
     {
         // Arrange: Create command instance
-        $command = new InstallMfaCommand();
+        $command = new InstallMfaCommand;
 
         // Assert: Verify command name and description
         $this->assertSame('mfa:install', $command->getName());
@@ -39,7 +40,7 @@ final class InstallMfaCommandTest extends TestCase
     public function test_command_has_correct_signature(): void
     {
         // Arrange: Create command instance
-        $command = new InstallMfaCommand();
+        $command = new InstallMfaCommand;
 
         // Assert: Verify signature contains expected options
         $signature = $command->getSynopsis();
