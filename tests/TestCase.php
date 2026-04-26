@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Kani\Otp\Tests;
+namespace Kani\Mfa\Tests;
 
 use Carbon\Carbon;
 use Illuminate\Foundation\Application;
-use Kani\Otp\OtpServiceProvider;
+use Kani\Mfa\MfaServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 /**
@@ -53,7 +53,7 @@ abstract class TestCase extends Orchestra
     protected function getPackageProviders($app): array
     {
         return [
-            OtpServiceProvider::class,
+            MfaServiceProvider::class,
         ];
     }
 

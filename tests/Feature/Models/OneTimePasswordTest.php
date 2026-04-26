@@ -3,13 +3,13 @@
 
 declare(strict_types=1);
 
-namespace Kani\Otp\Tests\Feature\Models;
+namespace Kani\Mfa\Tests\Feature\Models;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
-use Kani\Otp\Models\OneTimePassword;
-use Kani\Otp\Tests\TestCase;
+use Kani\Mfa\Otp\Models\OneTimePassword;
+use Kani\Mfa\Tests\TestCase;
 
 /**
  * Test suite for the OneTimePassword model.
@@ -17,7 +17,7 @@ use Kani\Otp\Tests\TestCase;
  * Validates all model functionality including state management,
  * verification logic, expiration handling, and polymorphic relationships.
  *
- * @package Kani\Otp\Tests\Feature\Models
+ * @package Kani\Mfa\Tests\Feature\Models
  */
 final class OneTimePasswordTest extends TestCase
 {

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Kani\Otp\Tests\Unit\Notifications;
+namespace Kani\Mfa\Tests\Unit\Notifications;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
-use Kani\Otp\Models\OneTimePassword;
-use Kani\Otp\Notifications\OtpNotification;
-use Kani\Otp\Tests\TestCase;
-use Kani\Otp\Tests\Support\TestCheckPoint;
-use Kani\Otp\Tests\Support\TestUser;
+use Kani\Mfa\Otp\Models\OneTimePassword;
+use Kani\Mfa\Otp\Notifications\OtpNotification;
+use Kani\Mfa\Tests\TestCase;
+use Kani\Mfa\Tests\Support\TestCheckPoint;
+use Kani\Mfa\Tests\Support\TestUser;
 
 /**
  * Test suite for the OtpNotification class.
@@ -34,9 +34,10 @@ final class OtpNotificationTest extends TestCase
     {
         parent::setUp();
 
-        // Set default locale to English for tests
-        config()->set('otp.localization.locale', 'en');
-        config()->set('otp.localization.fallback_locale', 'en');
+        // Set default locale to English for tests (nouvelle structure mfa.otp.localization)
+        config()->set('mfa.otp.localization.locale', 'en');
+        config()->set('mfa.otp.localization.fallback_locale', 'en');
+        config()->set('mfa.otp.localization.supported_locales', ['fr', 'en']);
 
         $this->plainCode = '123456';
 
@@ -172,9 +173,9 @@ final class OtpNotificationTest extends TestCase
      */
     public function test_notification_returns_correct_mail_message_in_english(): void
     {
-        // Arrange: Ensure English locale in package config
-        config()->set('otp.localization.locale', 'en');
-        config()->set('otp.localization.fallback_locale', 'en');
+        // Arrange: Ensure English locale in package config (nouvelle structure)
+        config()->set('mfa.otp.localization.locale', 'en');
+        config()->set('mfa.otp.localization.fallback_locale', 'en');
 
         // Act: Create notification and generate mail message
         $notification = new OtpNotification($this->otp, $this->plainCode);
@@ -192,9 +193,10 @@ final class OtpNotificationTest extends TestCase
      */
     public function test_notification_returns_correct_mail_message_in_french(): void
     {
-        // Arrange: Set French locale in package config
-        config()->set('otp.localization.locale', 'fr');
-        config()->set('otp.localization.fallback_locale', 'en');
+        // Arrange: Set French locale in package config (nouvelle structure)
+        config()->set('mfa.otp.localization.locale', 'fr');
+        config()->set('mfa.otp.localization.fallback_locale', 'en');
+        config()->set('mfa.otp.localization.supported_locales', ['fr', 'en']);
 
         // Act: Create notification and generate mail message
         $notification = new OtpNotification($this->otp, $this->plainCode);
@@ -212,8 +214,8 @@ final class OtpNotificationTest extends TestCase
      */
     public function test_notification_uses_fallback_name_when_notifiable_has_no_name_and_no_email(): void
     {
-        // Arrange: Set English locale
-        config()->set('otp.localization.locale', 'en');
+        // Arrange: Set English locale (nouvelle structure)
+        config()->set('mfa.otp.localization.locale', 'en');
 
         $notifiableWithoutNameOrEmail = new class {
             // No name, no email property
@@ -232,8 +234,10 @@ final class OtpNotificationTest extends TestCase
      */
     public function test_notification_uses_fallback_name_in_french_when_configured(): void
     {
-        // Arrange: Set French locale
-        config()->set('otp.localization.locale', 'fr');
+        // Arrange: Set French locale (nouvelle structure)
+        config()->set('mfa.otp.localization.locale', 'fr');
+        config()->set('mfa.otp.localization.fallback_locale', 'en');
+        config()->set('mfa.otp.localization.supported_locales', ['fr', 'en']);
 
         $notifiableWithoutNameOrEmail = new class {
             // No name, no email property
@@ -252,8 +256,8 @@ final class OtpNotificationTest extends TestCase
      */
     public function test_notification_uses_email_when_name_not_available(): void
     {
-        // Arrange: Set English locale
-        config()->set('otp.localization.locale', 'en');
+        // Arrange: Set English locale (nouvelle structure)
+        config()->set('mfa.otp.localization.locale', 'en');
 
         $plainNotifiable = new class {
             public string $email = 'test@example.com';
@@ -272,8 +276,10 @@ final class OtpNotificationTest extends TestCase
      */
     public function test_notification_uses_email_in_french_when_name_not_available(): void
     {
-        // Arrange: Set French locale
-        config()->set('otp.localization.locale', 'fr');
+        // Arrange: Set French locale (nouvelle structure)
+        config()->set('mfa.otp.localization.locale', 'fr');
+        config()->set('mfa.otp.localization.fallback_locale', 'en');
+        config()->set('mfa.otp.localization.supported_locales', ['fr', 'en']);
 
         $plainNotifiable = new class {
             public string $email = 'test@example.com';
@@ -326,10 +332,10 @@ final class OtpNotificationTest extends TestCase
      */
     public function test_notification_respects_package_locale_configuration(): void
     {
-        // Arrange: Set package locale to French
-        config()->set('otp.localization.locale', 'fr');
-        config()->set('otp.localization.supported_locales', ['fr', 'en']);
-        config()->set('otp.localization.fallback_locale', 'en');
+        // Arrange: Set package locale to French (nouvelle structure)
+        config()->set('mfa.otp.localization.locale', 'fr');
+        config()->set('mfa.otp.localization.supported_locales', ['fr', 'en']);
+        config()->set('mfa.otp.localization.fallback_locale', 'en');
 
         // Act: Create notification and generate mail message
         $notification = new OtpNotification($this->otp, $this->plainCode);

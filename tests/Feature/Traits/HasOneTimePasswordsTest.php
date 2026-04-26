@@ -3,13 +3,14 @@
 
 declare(strict_types=1);
 
-namespace Kani\Otp\Tests\Feature\Traits;
+namespace Kani\Mfa\Tests\Feature\Traits;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Kani\Otp\Models\OneTimePassword;
-use Kani\Otp\Services\OtpService;
-use Kani\Otp\Tests\TestCase;
-use Kani\Otp\Tests\Support\TestUser;
+use Kani\Mfa\Otp\Data\OtpResponseData;
+use Kani\Mfa\Otp\Models\OneTimePassword;
+use Kani\Mfa\Otp\Services\OtpService;
+use Kani\Mfa\Tests\TestCase;
+use Kani\Mfa\Tests\Support\TestUser;
 use Mockery;
 
 /**
@@ -91,7 +92,7 @@ final class HasOneTimePasswordsTest extends TestCase
                 null,
                 null
             )
-            ->andReturn(\Kani\Otp\Data\OtpResponseData::success());
+            ->andReturn(OtpResponseData::success());
 
         $this->app->instance(OtpService::class, $otpServiceMock);
 
@@ -127,7 +128,7 @@ final class HasOneTimePasswordsTest extends TestCase
                 $expiresInMinutes,
                 $maxAttempts
             )
-            ->andReturn(\Kani\Otp\Data\OtpResponseData::success());
+            ->andReturn(OtpResponseData::success());
 
         $this->app->instance(OtpService::class, $otpServiceMock);
 
@@ -162,7 +163,7 @@ final class HasOneTimePasswordsTest extends TestCase
                 null,
                 null
             )
-            ->andReturn(\Kani\Otp\Data\OtpResponseData::success());
+            ->andReturn(OtpResponseData::success());
 
         $this->app->instance(OtpService::class, $otpServiceMock);
 
@@ -194,7 +195,7 @@ final class HasOneTimePasswordsTest extends TestCase
                 $this->testDestination,
                 $consume
             )
-            ->andReturn(\Kani\Otp\Data\OtpResponseData::success());
+            ->andReturn(OtpResponseData::success());
 
         $this->app->instance(OtpService::class, $otpServiceMock);
 

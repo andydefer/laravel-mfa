@@ -2,14 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Kani\Otp\Tests\Support;
+namespace Kani\Mfa\Tests\Support;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Kani\Otp\Contracts\MustNemesis;
-use Kani\Otp\Contracts\MustOtpChannels;
-use Kani\Otp\Traits\HasNemesisTokens;
-use Kani\Otp\Traits\HasOneTimePasswords;
+use Kani\Mfa\Otp\Contracts\MustOtpChannels;
+use Kani\Mfa\Otp\Traits\HasOneTimePasswords;
 
 /**
  * Test model for checkpoints (billeterie) that can authenticate with tokens.
@@ -17,7 +15,7 @@ use Kani\Otp\Traits\HasOneTimePasswords;
  * This model represents a physical checkpoint (turnstile, gate, etc.)
  * that needs to authenticate with Nemesis tokens for ticket validation.
  *
- * @package Kani\Otp\Tests\Support
+ * @package Kani\Mfa\Tests\Support
  */
 final class TestCheckPoint extends Model implements MustOtpChannels
 {

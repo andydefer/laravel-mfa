@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Kani\Otp\Tests\Support;
+namespace Kani\Mfa\Tests\Support;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
-use Kani\Otp\Contracts\MustOtpChannels;
-use Kani\Otp\Traits\HasOneTimePasswords;
+use Kani\Mfa\Otp\Contracts\MustOtpChannels;
+use Kani\Mfa\Otp\Traits\HasOneTimePasswords;
+use Kani\Mfa\Totp\Traits\HasTwoFactorAuthentication;
 
 /**
  * Test model representing a user entity for OTP testing purposes.
@@ -21,6 +22,7 @@ use Kani\Otp\Traits\HasOneTimePasswords;
 final class TestUser extends Model implements MustOtpChannels
 {
     use HasOneTimePasswords;
+    use HasTwoFactorAuthentication;
     use Notifiable;
     use SoftDeletes;
 

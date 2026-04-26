@@ -66,7 +66,7 @@ php artisan list | grep otp
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Kani\Otp\Traits\HasOneTimePasswords;
+use Kani\Mfa\Traits\HasOneTimePasswords;
 
 class User extends Authenticatable
 {
@@ -621,7 +621,7 @@ OTP_FALLBACK_LOCALE=en
 ### Utilisation du helper `TranslationHelper`
 
 ```php
-use Kani\Otp\Helpers\TranslationHelper;
+use Kani\Mfa\Helpers\TranslationHelper;
 
 // Traduire un message
 $message = TranslationHelper::trans('messages.send_success');
@@ -685,7 +685,7 @@ cp vendor/andydefer/laravel-otp/src/Lang/en/messages.php resources/lang/vendor/o
 
 namespace App\Services;
 
-use Kani\Otp\Contracts\CodeGeneratorInterface;
+use Kani\Mfa\Contracts\CodeGeneratorInterface;
 
 class CustomCodeGenerator implements CodeGeneratorInterface
 {
@@ -703,7 +703,7 @@ class CustomCodeGenerator implements CodeGeneratorInterface
 // app/Providers/AppServiceProvider.php
 
 use App\Services\CustomCodeGenerator;
-use Kani\Otp\Contracts\CodeGeneratorInterface;
+use Kani\Mfa\Contracts\CodeGeneratorInterface;
 
 public function register()
 {
@@ -721,7 +721,7 @@ public function register()
 namespace App\Services;
 
 use Illuminate\Support\Facades\Redis;
-use Kani\Otp\Contracts\RateLimiterInterface;
+use Kani\Mfa\Contracts\RateLimiterInterface;
 
 class RedisRateLimiter implements RateLimiterInterface
 {
@@ -759,7 +759,7 @@ $this->app->bind(RateLimiterInterface::class, RedisRateLimiter::class);
 ```php
 // app/Models/User.php
 
-use Kani\Otp\Contracts\MustOtpChannels;
+use Kani\Mfa\Contracts\MustOtpChannels;
 
 class User extends Authenticatable implements MustOtpChannels
 {
@@ -863,7 +863,7 @@ php artisan otp:cleanup --force --type=login --days=7
 namespace App\Notifications;
 
 use Illuminate\Notifications\Notification;
-use Kani\Otp\Models\OneTimePassword;
+use Kani\Mfa\Models\OneTimePassword;
 
 class SmsOtpNotification extends Notification
 {
@@ -894,7 +894,7 @@ class SmsOtpNotification extends Notification
 
 namespace App\Notifications;
 
-use Kani\Otp\Notifications\OtpNotification as BaseOtpNotification;
+use Kani\Mfa\Notifications\OtpNotification as BaseOtpNotification;
 
 class CustomOtpNotification extends BaseOtpNotification
 {

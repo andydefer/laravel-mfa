@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Kani\Otp\Tests\Feature\Services;
+namespace Kani\Mfa\Tests\Feature\Services;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
-use Kani\Otp\Helpers\TranslationHelper;
-use Kani\Otp\Models\OneTimePassword;
-use Kani\Otp\Notifications\OtpNotification;
-use Kani\Otp\Services\DefaultCodeGenerator;
-use Kani\Otp\Services\LaravelRateLimiter;
-use Kani\Otp\Services\OtpService;
-use Kani\Otp\Tests\TestCase;
-use Kani\Otp\Tests\Support\TestUser;
+use Kani\Mfa\Core\Helpers\TranslationHelper;
+use Kani\Mfa\Otp\Models\OneTimePassword;
+use Kani\Mfa\Otp\Notifications\OtpNotification;
+use Kani\Mfa\Otp\Services\DefaultCodeGenerator;
+use Kani\Mfa\Otp\Services\LaravelRateLimiter;
+use Kani\Mfa\Otp\Services\OtpService;
+use Kani\Mfa\Tests\TestCase;
+use Kani\Mfa\Tests\Support\TestUser;
 
 /**
  * Test suite for OtpService core functionality.

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Kani\Otp\Tests\Unit\Helpers;
+namespace Kani\Mfa\Tests\Unit\Helpers;
 
-use Kani\Otp\Helpers\TranslationHelper;
-use Kani\Otp\Tests\TestCase;
+use Kani\Mfa\Core\Helpers\TranslationHelper;
+use Kani\Mfa\Tests\TestCase;
 
 /**
  * Test suite for TranslationHelper class.
@@ -20,9 +20,10 @@ final class TranslationHelperTest extends TestCase
      */
     public function test_trans_returns_english_text_when_locale_is_english(): void
     {
-        // Arrange: Set English locale in package configuration
-        config()->set('otp.localization.locale', 'en');
-        config()->set('otp.localization.fallback_locale', 'en');
+        // Arrange: Set English locale in package configuration (nouvelle structure)
+        config()->set('mfa.otp.localization.locale', 'en');
+        config()->set('mfa.otp.localization.fallback_locale', 'en');
+        config()->set('mfa.otp.localization.supported_locales', ['fr', 'en']);
 
         // Act: Get a translated message
         $subject = TranslationHelper::trans('messages.subject', ['app_name' => 'Test App']);
@@ -40,9 +41,10 @@ final class TranslationHelperTest extends TestCase
      */
     public function test_trans_returns_french_text_when_locale_is_french(): void
     {
-        // Arrange: Set French locale in package configuration
-        config()->set('otp.localization.locale', 'fr');
-        config()->set('otp.localization.fallback_locale', 'en');
+        // Arrange: Set French locale in package configuration (nouvelle structure)
+        config()->set('mfa.otp.localization.locale', 'fr');
+        config()->set('mfa.otp.localization.fallback_locale', 'en');
+        config()->set('mfa.otp.localization.supported_locales', ['fr', 'en']);
 
         // Act: Get a translated message
         $subject = TranslationHelper::trans('messages.subject', ['app_name' => 'Test App']);
@@ -60,10 +62,10 @@ final class TranslationHelperTest extends TestCase
      */
     public function test_trans_falls_back_to_fallback_locale_when_locale_not_supported(): void
     {
-        // Arrange: Set unsupported German locale with English fallback
-        config()->set('otp.localization.locale', 'de');
-        config()->set('otp.localization.supported_locales', ['fr', 'en']);
-        config()->set('otp.localization.fallback_locale', 'en');
+        // Arrange: Set unsupported German locale with English fallback (nouvelle structure)
+        config()->set('mfa.otp.localization.locale', 'de');
+        config()->set('mfa.otp.localization.supported_locales', ['fr', 'en']);
+        config()->set('mfa.otp.localization.fallback_locale', 'en');
 
         // Act: Get a translated message
         $subject = TranslationHelper::trans('messages.subject', ['app_name' => 'Test App']);
@@ -78,9 +80,9 @@ final class TranslationHelperTest extends TestCase
     public function test_trans_uses_default_english_when_no_configuration_set(): void
     {
         // Arrange: Remove any locale configuration (use defaults)
-        config()->set('otp.localization.locale', null);
-        config()->set('otp.localization.fallback_locale', null);
-        config()->set('otp.localization.supported_locales', null);
+        config()->set('mfa.otp.localization.locale', null);
+        config()->set('mfa.otp.localization.fallback_locale', null);
+        config()->set('mfa.otp.localization.supported_locales', null);
 
         // Act: Get a translated message
         $subject = TranslationHelper::trans('messages.subject', ['app_name' => 'Test App']);
@@ -94,8 +96,8 @@ final class TranslationHelperTest extends TestCase
      */
     public function test_trans_replaces_placeholders_correctly(): void
     {
-        // Arrange: Set English locale
-        config()->set('otp.localization.locale', 'en');
+        // Arrange: Set English locale (nouvelle structure)
+        config()->set('mfa.otp.localization.locale', 'en');
 
         // Act: Get messages with placeholders
         $subject = TranslationHelper::trans('messages.subject', ['app_name' => 'MyAwesomeApp']);
@@ -113,11 +115,10 @@ final class TranslationHelperTest extends TestCase
      */
     public function test_trans_handles_multiple_placeholders_using_existing_key(): void
     {
-        // Arrange: Set English locale
-        config()->set('otp.localization.locale', 'en');
+        // Arrange: Set English locale (nouvelle structure)
+        config()->set('mfa.otp.localization.locale', 'en');
 
         // Act: Use an existing key that contains multiple placeholders
-        // Note: We use invalid_code_attempts_remaining which already has :attempts placeholder
         $message = TranslationHelper::trans('messages.invalid_code_attempts_remaining', [
             'attempts' => 2,
         ]);
@@ -131,14 +132,14 @@ final class TranslationHelperTest extends TestCase
      */
     public function test_trans_returns_key_when_translation_does_not_exist(): void
     {
-        // Arrange: Set English locale
-        config()->set('otp.localization.locale', 'en');
+        // Arrange: Set English locale (nouvelle structure)
+        config()->set('mfa.otp.localization.locale', 'en');
 
         // Act: Request a non-existent translation key
         $result = TranslationHelper::trans('messages.non_existent_key');
 
         // Assert: Returns the key itself (Laravel default behavior)
-        $this->assertEquals('otp::messages.non_existent_key', $result);
+        $this->assertEquals('mfa::messages.non_existent_key', $result);
     }
 
     /**
@@ -146,10 +147,10 @@ final class TranslationHelperTest extends TestCase
      */
     public function test_trans_does_not_affect_global_application_locale(): void
     {
-        // Arrange: Set application locale to French and package locale to English
+        // Arrange: Set application locale to French and package locale to English (nouvelle structure)
         app()->setLocale('fr');
-        config()->set('otp.localization.locale', 'en');
-        config()->set('otp.localization.fallback_locale', 'en');
+        config()->set('mfa.otp.localization.locale', 'en');
+        config()->set('mfa.otp.localization.fallback_locale', 'en');
 
         // Act: Get a translation from the helper
         $translatedMessage = TranslationHelper::trans('messages.subject', ['app_name' => 'Test']);
@@ -164,10 +165,10 @@ final class TranslationHelperTest extends TestCase
      */
     public function test_trans_respects_supported_locales_configuration(): void
     {
-        // Arrange: Configure only French as supported
-        config()->set('otp.localization.locale', 'en');
-        config()->set('otp.localization.supported_locales', ['fr']);
-        config()->set('otp.localization.fallback_locale', 'fr');
+        // Arrange: Configure only French as supported (nouvelle structure)
+        config()->set('mfa.otp.localization.locale', 'en');
+        config()->set('mfa.otp.localization.supported_locales', ['fr']);
+        config()->set('mfa.otp.localization.fallback_locale', 'fr');
 
         // Act: Attempt to get English translation (not supported)
         $subject = TranslationHelper::trans('messages.subject', ['app_name' => 'Test']);
@@ -181,8 +182,8 @@ final class TranslationHelperTest extends TestCase
      */
     public function test_trans_handles_empty_replace_array(): void
     {
-        // Arrange: Set English locale
-        config()->set('otp.localization.locale', 'en');
+        // Arrange: Set English locale (nouvelle structure)
+        config()->set('mfa.otp.localization.locale', 'en');
 
         // Act: Get message without any replacements
         $ignoreMessage = TranslationHelper::trans('messages.ignore_request');
@@ -199,10 +200,10 @@ final class TranslationHelperTest extends TestCase
      */
     public function test_trans_handles_null_configuration_values_gracefully(): void
     {
-        // Arrange: Set null values for all configuration options
-        config()->set('otp.localization.locale', null);
-        config()->set('otp.localization.fallback_locale', null);
-        config()->set('otp.localization.supported_locales', null);
+        // Arrange: Set null values for all configuration options (nouvelle structure)
+        config()->set('mfa.otp.localization.locale', null);
+        config()->set('mfa.otp.localization.fallback_locale', null);
+        config()->set('mfa.otp.localization.supported_locales', null);
 
         // Act: Get a translated message
         $subject = TranslationHelper::trans('messages.subject', ['app_name' => 'Test']);
