@@ -53,26 +53,52 @@ git-commit-push: pre-commit ## Commit and push all changes with confirmation
 	git commit -m "$$commit_message"; \
 	git push
 	@make toggle-prompts
-
+	
 .PHONY: git-tag
 git-tag: ## Create and push a new version tag (major/minor/patch)
 	@bash -c '\
 	read -p "Tag type (major/minor/patch): " tag_type; \
-	last_tag=$$(git tag --sort=-v:refname | head -n 1); \
-	if [ -z "$$last_tag" ]; then last_tag="0.0.0"; fi; \
-	major=$$(echo $$last_tag | cut -d. -f1); \
-	minor=$$(echo $$last_tag | cut -d. -f2); \
-	patch=$$(echo $$last_tag | cut -d. -f3); \
+	\
+	# Get the latest tag, default to 0.0.0 if none exists \
+	last_tag=$$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0"); \
+	echo "📌 Current version: $$last_tag"; \
+	\
+	# Split version into parts \
+	IFS="." read -r major minor patch <<< "$$last_tag"; \
+	\
+	# Calculate new version based on type \
 	case "$$tag_type" in \
-		major) major=$$((major + 1)); minor=0; patch=0;; \
-		minor) minor=$$((minor + 1)); patch=0;; \
-		patch) patch=$$((patch + 1));; \
-		*) echo "❌ Invalid tag type: $$tag_type"; exit 1;; \
+		major) \
+			new_tag="$$((major + 1)).0.0"; \
+			echo "🔧 Major version bump: $$last_tag → $$new_tag"; \
+			;; \
+		minor) \
+			new_tag="$$major.$$((minor + 1)).0"; \
+			echo "🔧 Minor version bump: $$last_tag → $$new_tag"; \
+			;; \
+		patch) \
+			new_tag="$$major.$$minor.$$((patch + 1))"; \
+			echo "🔧 Patch version bump: $$last_tag → $$new_tag"; \
+			;; \
+		*) \
+			echo "❌ Invalid tag type: $$tag_type. Use: major, minor, or patch"; \
+			exit 1; \
+			;; \
 	esac; \
-	new_tag="$$major.$$minor.$$patch"; \
+	\
+	# Check if tag already exists \
+	if git rev-parse "$$new_tag" >/dev/null 2>&1; then \
+		echo "❌ Tag $$new_tag already exists!"; \
+		echo "💡 Use a different version or delete the existing tag:"; \
+		echo "   git tag -d $$new_tag && git push origin --delete $$new_tag"; \
+		exit 1; \
+	fi; \
+	\
+	# Create and push tag \
+	echo "🏷️  Creating tag $$new_tag..."; \
 	git tag -a "$$new_tag" -m "Release $$new_tag"; \
 	git push origin "$$new_tag"; \
-	echo "✅ Released new tag: $$new_tag"; \
+	echo "✅ Successfully released $$new_tag 🚀"; \
 	'
 
 .PHONY: git-tag-republish

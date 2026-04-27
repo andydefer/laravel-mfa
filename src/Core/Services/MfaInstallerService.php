@@ -193,7 +193,7 @@ class MfaInstallerService
      */
     private function getConfigSourcePath(): string
     {
-        return __DIR__.'/../../../config/mfa.php';
+        return __DIR__ . '/../../../config/mfa.php';
     }
 
     /**
@@ -210,20 +210,48 @@ class MfaInstallerService
 
         $migrationFiles = $this->getAllMigrationFiles($includeOtp, $includeTotp);
 
+        if (empty($migrationFiles)) {
+            $command->warn('   No migration files found to publish.');
+            return;
+        }
+
+        $copiedCount = 0;
+
         foreach ($migrationFiles as $sourcePath) {
-            $destinationPath = $this->getMigrationDestinationPath($sourcePath);
+            $filename = basename($sourcePath);
 
+            // Générer un nom de fichier avec un timestamp unique pour éviter les conflits
+            // Le package utilise déjà des timestamps, on les garde
+            $destinationPath = $this->getMigrationDestinationPath($filename);
+
+            // Vérifier si le fichier source existe
+            if (!File::exists($sourcePath)) {
+                $command->warn("   Source migration not found: {$filename}");
+                continue;
+            }
+
+            // Vérifier si le fichier destination existe déjà
             if (File::exists($destinationPath) && ! $force) {
-                $command->warn('   Migration '.basename($sourcePath).' already exists. Use --force to overwrite.');
-
+                $command->warn("   Migration {$filename} already exists. Use --force to overwrite.");
                 continue;
             }
 
             $this->ensureDirectoryExists(dirname($destinationPath));
-            File::copy($sourcePath, $destinationPath);
+
+            // Copier le fichier
+            if (File::copy($sourcePath, $destinationPath)) {
+                $copiedCount++;
+                $command->line("   ✅ Copied: {$filename}");
+            } else {
+                $command->error("   ❌ Failed to copy: {$filename}");
+            }
         }
 
-        $command->info('   ✅ Migrations published to database/migrations/');
+        if ($copiedCount > 0) {
+            $command->info("   ✅ {$copiedCount} migration(s) published to database/migrations/");
+        } else {
+            $command->warn("   No new migrations were copied.");
+        }
     }
 
     /**
@@ -235,26 +263,30 @@ class MfaInstallerService
      */
     private function getAllMigrationFiles(bool $includeOtp, bool $includeTotp): array
     {
-        $migrationDirectory = __DIR__.'/../../database/migrations/';
+        $migrationDirectory = __DIR__ . '/../../../database/migrations/';
 
         if (! is_dir($migrationDirectory)) {
             return [];
         }
 
-        $files = glob($migrationDirectory.'*.php');
+        // Récupérer tous les fichiers PHP dans le dossier migrations
+        $files = glob($migrationDirectory . '*.php');
 
-        if ($files === false) {
+        if ($files === false || empty($files)) {
             return [];
         }
 
-        $files = array_filter($files, function ($file) use ($includeOtp, $includeTotp) {
-            $isOtpMigration = str_contains($file, 'one_time_passwords');
-            $isTotpMigration = str_contains($file, 'two_factor_secrets');
+        $filteredFiles = array_filter($files, function ($file) use ($includeOtp, $includeTotp) {
+            $filename = basename($file);
+            $isOtpMigration = str_contains($filename, 'one_time_passwords');
+            $isTotpMigration = str_contains($filename, 'two_factor_secrets');
 
+            // Exclure les migrations OTP si requested
             if ($isOtpMigration && ! $includeOtp) {
                 return false;
             }
 
+            // Exclure les migrations TOTP si requested
             if ($isTotpMigration && ! $includeTotp) {
                 return false;
             }
@@ -262,20 +294,18 @@ class MfaInstallerService
             return true;
         });
 
-        return array_values($files);
+        return array_values($filteredFiles);
     }
 
     /**
      * Determine the destination path for a migration file in the Laravel project.
      *
-     * @param  string  $sourcePath  Source migration file path
+     * @param  string  $filename  The migration filename
      * @return string Destination path in database/migrations directory
      */
-    private function getMigrationDestinationPath(string $sourcePath): string
+    private function getMigrationDestinationPath(string $filename): string
     {
-        $filename = basename($sourcePath);
-
-        return database_path('migrations/'.$filename);
+        return database_path('migrations/' . $filename);
     }
 
     /**
@@ -321,10 +351,13 @@ class MfaInstallerService
 
         try {
             Artisan::call('migrate', ['--force' => true]);
-            $command->info(Artisan::output());
+            $output = Artisan::output();
+            if (!empty($output)) {
+                $command->line($output);
+            }
             $command->info('   ✅ Migrations completed successfully.');
         } catch (RuntimeException $exception) {
-            $command->error('   ❌ Migration failed: '.$exception->getMessage());
+            $command->error('   ❌ Migration failed: ' . $exception->getMessage());
         }
     }
 
@@ -412,7 +445,7 @@ class MfaInstallerService
         if ($includeTotp) {
             $command->line('   🔐 TOTP (Time-based One-Time Password / 2FA):');
             $command->line('      1. Add the trait to your model:');
-            $command->line('         <info>use Kani\\Mfa\\Traits\\Totp\\HasTwoFactorAuthentication;</info>');
+            $command->line('         <info>use Kani\\Mfa\\Totp\\Traits\\HasTwoFactorAuthentication;</info>');
             $command->line('');
             $command->line('      2. Generate a QR code for Google Authenticator:');
             $command->line('         <info>$qrCodeUri = $user->getTwoFactorQrCodeUri();</info>');
