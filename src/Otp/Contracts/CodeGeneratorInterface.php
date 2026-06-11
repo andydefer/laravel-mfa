@@ -4,7 +4,7 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Otp\Contracts;
+namespace AndyDefer\Mfa\Otp\Contracts;
 
 /**
  * Contract for generating OTP codes.

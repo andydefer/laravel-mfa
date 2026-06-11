@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Tests\Feature\Services;
+namespace AndyDefer\Mfa\Tests\Feature\Services;
 
-use Kani\Mfa\Tests\TestCase;
-use Kani\Mfa\Totp\Services\TOTPService;
+use AndyDefer\Mfa\Tests\TestCase;
+use AndyDefer\Mfa\Totp\Services\TOTPService;
 use OTPHP\Exception\SecretDecodingException;
 use ParagonIE\ConstantTime\Base32;
 
@@ -62,7 +62,7 @@ final class TOTPServiceTest extends TestCase
             $this->assertIsString($decoded);
             $this->assertEquals(20, strlen($decoded)); // 20 bytes = 160 bits
         } catch (\Exception $e) {
-            $this->fail('Secret should be valid Base32: '.$e->getMessage());
+            $this->fail('Secret should be valid Base32: ' . $e->getMessage());
         }
     }
 

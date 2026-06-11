@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Otp\Services;
+namespace AndyDefer\Mfa\Otp\Services;
 
-use Kani\Mfa\Otp\Contracts\CodeGeneratorInterface;
+use AndyDefer\Mfa\Otp\Contracts\CodeGeneratorInterface;
 
 /**
  * Default OTP code generator producing random 6-digit numeric codes.

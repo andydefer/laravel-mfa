@@ -4,18 +4,18 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa;
+namespace AndyDefer\Mfa;
 
 use Illuminate\Support\ServiceProvider;
-use Kani\Mfa\Core\Commands\CleanupMfaCommand;
-use Kani\Mfa\Core\Commands\InstallMfaCommand;
-use Kani\Mfa\Core\Services\MfaInstallerService;
-use Kani\Mfa\Otp\Contracts\CodeGeneratorInterface;
-use Kani\Mfa\Otp\Contracts\RateLimiterInterface;
-use Kani\Mfa\Otp\Services\DefaultCodeGenerator;
-use Kani\Mfa\Otp\Services\LaravelRateLimiter;
-use Kani\Mfa\Otp\Services\OtpService;
-use Kani\Mfa\Totp\Services\TOTPService;
+use AndyDefer\Mfa\Core\Commands\CleanupMfaCommand;
+use AndyDefer\Mfa\Core\Commands\InstallMfaCommand;
+use AndyDefer\Mfa\Core\Services\MfaInstallerService;
+use AndyDefer\Mfa\Otp\Contracts\CodeGeneratorInterface;
+use AndyDefer\Mfa\Otp\Contracts\RateLimiterInterface;
+use AndyDefer\Mfa\Otp\Services\DefaultCodeGenerator;
+use AndyDefer\Mfa\Otp\Services\LaravelRateLimiter;
+use AndyDefer\Mfa\Otp\Services\OtpService;
+use AndyDefer\Mfa\Totp\Services\TOTPService;
 
 /**
  * Laravel service provider for the MFA package.
@@ -57,7 +57,7 @@ final class MfaServiceProvider extends ServiceProvider
     {
         // Correction: le dossier Lang est maintenant dans Core/
         $this->loadTranslationsFrom(
-            path: __DIR__.'/Core/Lang',
+            path: __DIR__ . '/Core/Lang',
             namespace: 'mfa'
         );
     }
@@ -90,7 +90,7 @@ final class MfaServiceProvider extends ServiceProvider
 
         // Correction: le dossier Lang est maintenant dans Core/
         $this->publishes(
-            paths: [__DIR__.'/Core/Lang' => $this->app->langPath('vendor/mfa')],
+            paths: [__DIR__ . '/Core/Lang' => $this->app->langPath('vendor/mfa')],
             groups: 'mfa-translations'
         );
     }
@@ -100,7 +100,7 @@ final class MfaServiceProvider extends ServiceProvider
      */
     private function getConfigSourcePath(): string
     {
-        return __DIR__.'/../config/mfa.php';
+        return __DIR__ . '/../config/mfa.php';
     }
 
     /**
@@ -116,7 +116,7 @@ final class MfaServiceProvider extends ServiceProvider
      */
     private function getMigrationsSourcePath(): string
     {
-        return __DIR__.'/../database/migrations/';
+        return __DIR__ . '/../database/migrations/';
     }
 
     /**

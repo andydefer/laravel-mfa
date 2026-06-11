@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Tests\Unit\Services;
+namespace AndyDefer\Mfa\Tests\Unit\Services;
 
 use Illuminate\Support\Facades\RateLimiter;
-use Kani\Mfa\Otp\Services\LaravelRateLimiter;
-use Kani\Mfa\Tests\TestCase;
+use AndyDefer\Mfa\Otp\Services\LaravelRateLimiter;
+use AndyDefer\Mfa\Tests\TestCase;
 
 /**
  * Test suite for LaravelRateLimiter service.
@@ -29,7 +29,7 @@ final class LaravelRateLimiterTest extends TestCase
 
         // Arrange: Create service instance and test key
         $this->rateLimiter = new LaravelRateLimiter;
-        $this->testKey = 'test_rate_limit_key_'.uniqid();
+        $this->testKey = 'test_rate_limit_key_' . uniqid();
     }
 
     /**
@@ -163,8 +163,8 @@ final class LaravelRateLimiterTest extends TestCase
     public function test_different_keys_have_independent_rate_limits(): void
     {
         // Arrange: Two different keys
-        $key1 = 'key1_'.uniqid();
-        $key2 = 'key2_'.uniqid();
+        $key1 = 'key1_' . uniqid();
+        $key2 = 'key2_' . uniqid();
 
         // Act: Hit only key1
         for ($i = 0; $i < 3; $i++) {
@@ -202,7 +202,7 @@ final class LaravelRateLimiterTest extends TestCase
     public function test_clear_on_non_existent_key_does_not_throw_exception(): void
     {
         // Arrange: Non-existent key
-        $nonExistentKey = 'non_existent_'.uniqid();
+        $nonExistentKey = 'non_existent_' . uniqid();
 
         // Act & Assert: Clear should not throw exception
         $this->rateLimiter->clear($nonExistentKey);
@@ -215,7 +215,7 @@ final class LaravelRateLimiterTest extends TestCase
     public function test_get_available_in_seconds_on_non_existent_key_returns_zero(): void
     {
         // Arrange: Non-existent key
-        $nonExistentKey = 'non_existent_'.uniqid();
+        $nonExistentKey = 'non_existent_' . uniqid();
 
         // Act: Get available time
         $availableIn = $this->rateLimiter->getAvailableInSeconds($nonExistentKey);

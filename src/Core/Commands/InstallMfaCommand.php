@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Core\Commands;
+namespace AndyDefer\Mfa\Core\Commands;
 
 use Illuminate\Console\Command;
-use Kani\Mfa\Core\Services\MfaInstallerService;
+use AndyDefer\Mfa\Core\Services\MfaInstallerService;
 
 /**
  * Console command for installing the Laravel MFA package.

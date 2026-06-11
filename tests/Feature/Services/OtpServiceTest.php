@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Tests\Feature\Services;
+namespace AndyDefer\Mfa\Tests\Feature\Services;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
-use Kani\Mfa\Core\Helpers\TranslationHelper;
-use Kani\Mfa\Otp\Models\OneTimePassword;
-use Kani\Mfa\Otp\Notifications\OtpNotification;
-use Kani\Mfa\Otp\Services\DefaultCodeGenerator;
-use Kani\Mfa\Otp\Services\LaravelRateLimiter;
-use Kani\Mfa\Otp\Services\OtpService;
-use Kani\Mfa\Tests\Support\TestUser;
-use Kani\Mfa\Tests\TestCase;
+use AndyDefer\Mfa\Core\Helpers\TranslationHelper;
+use AndyDefer\Mfa\Otp\Models\OneTimePassword;
+use AndyDefer\Mfa\Otp\Notifications\OtpNotification;
+use AndyDefer\Mfa\Otp\Services\LaravelRateLimiter;
+use AndyDefer\Mfa\Otp\Services\OtpService;
+use AndyDefer\Mfa\Otp\Services\DefaultCodeGenerator;
+use AndyDefer\Mfa\Tests\Support\TestUser;
+use AndyDefer\Mfa\Tests\TestCase;
 
 /**
  * Test suite for OtpService core functionality.
@@ -160,7 +160,7 @@ final class OtpServiceTest extends TestCase
     public function test_send_returns_rate_limited_response_when_exceeded(): void
     {
         // Arrange: Generate rate limit key for the user
-        $rateLimitKey = 'otp_request:'.$this->testUser->getMorphClass().':'.$this->testUser->id.':'.$this->testType.':'.md5($this->testDestination);
+        $rateLimitKey = 'otp_request:' . $this->testUser->getMorphClass() . ':' . $this->testUser->id . ':' . $this->testType . ':' . md5($this->testDestination);
 
         // Arrange: Exceed rate limit by hitting the key 4 times (limit is 3)
         RateLimiter::hit($rateLimitKey, 60);

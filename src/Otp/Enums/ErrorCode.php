@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Otp\Enums;
+namespace AndyDefer\Mfa\Otp\Enums;
 
 /**
  * Standardized error codes for OTP operations.

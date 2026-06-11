@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Tests\Unit\Notifications;
+namespace AndyDefer\Mfa\Tests\Unit\Notifications;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
-use Kani\Mfa\Otp\Models\OneTimePassword;
-use Kani\Mfa\Otp\Notifications\OtpNotification;
-use Kani\Mfa\Tests\Support\TestCheckPoint;
-use Kani\Mfa\Tests\Support\TestUser;
-use Kani\Mfa\Tests\TestCase;
+use AndyDefer\Mfa\Otp\Models\OneTimePassword;
+use AndyDefer\Mfa\Otp\Notifications\OtpNotification;
+use AndyDefer\Mfa\Tests\Support\TestCheckPoint;
+use AndyDefer\Mfa\Tests\Support\TestUser;
+use AndyDefer\Mfa\Tests\TestCase;
 
 /**
  * Test suite for the OtpNotification class.

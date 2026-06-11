@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Otp\Enums;
+namespace AndyDefer\Mfa\Otp\Enums;
 
 /**
  * Status codes for OTP operation responses.

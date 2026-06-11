@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Tests\Unit\Services;
+namespace AndyDefer\Mfa\Tests\Unit\Services;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
-use Kani\Mfa\Core\Services\MfaInstallerService;
-use Kani\Mfa\Tests\TestCase;
+use AndyDefer\Mfa\Core\Services\MfaInstallerService;
+use AndyDefer\Mfa\Tests\TestCase;
 use Mockery;
 
 /**
@@ -83,7 +83,7 @@ final class MfaInstallerServiceTest extends TestCase
             return;
         }
 
-        foreach (glob($migrationsDir.'/*.php') as $migrationFile) {
+        foreach (glob($migrationsDir . '/*.php') as $migrationFile) {
             File::delete($migrationFile);
         }
     }

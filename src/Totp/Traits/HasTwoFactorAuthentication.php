@@ -4,12 +4,12 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Totp\Traits;
+namespace AndyDefer\Mfa\Totp\Traits;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Kani\Mfa\Totp\Models\TwoFactorSecret;
-use Kani\Mfa\Totp\Services\TOTPService;
+use AndyDefer\Mfa\Totp\Models\TwoFactorSecret;
+use AndyDefer\Mfa\Totp\Services\TOTPService;
 
 /**
  * Trait for Eloquent models that require Two-Factor Authentication (2FA).

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Otp\Models;
+namespace AndyDefer\Mfa\Otp\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;

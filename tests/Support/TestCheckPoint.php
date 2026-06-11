@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Tests\Support;
+namespace AndyDefer\Mfa\Tests\Support;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Kani\Mfa\Otp\Contracts\MustOtpChannels;
-use Kani\Mfa\Otp\Traits\HasOneTimePasswords;
+use AndyDefer\Mfa\Otp\Contracts\MustOtpChannels;
+use AndyDefer\Mfa\Otp\Traits\HasOneTimePasswords;
 
 /**
  * Test model for checkpoints (billeterie) that can authenticate with tokens.

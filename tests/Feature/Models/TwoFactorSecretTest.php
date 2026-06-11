@@ -4,15 +4,15 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Tests\Feature\Models;
+namespace AndyDefer\Mfa\Tests\Feature\Models;
 
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Kani\Mfa\Tests\Support\TestUser;
-use Kani\Mfa\Tests\TestCase;
-use Kani\Mfa\Totp\Models\TwoFactorSecret;
-use Kani\Mfa\Totp\Services\TOTPService;
+use AndyDefer\Mfa\Tests\Support\TestUser;
+use AndyDefer\Mfa\Tests\TestCase;
+use AndyDefer\Mfa\Totp\Models\TwoFactorSecret;
+use AndyDefer\Mfa\Totp\Services\TOTPService;
 
 /**
  * Test suite for the TwoFactorSecret model.
@@ -212,7 +212,7 @@ final class TwoFactorSecretTest extends TestCase
         $uri = $secret->getProvisioningUri();
 
         // Assert
-        $this->assertStringContainsString('issuer='.rawurlencode(config('app.name')), $uri);
+        $this->assertStringContainsString('issuer=' . rawurlencode(config('app.name')), $uri);
         $this->assertStringContainsString((string) $this->testUser->getKey(), $uri);
     }
 

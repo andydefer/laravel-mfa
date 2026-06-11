@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Core\Services;
+namespace AndyDefer\Mfa\Core\Services;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
@@ -432,7 +432,7 @@ class MfaInstallerService
         if ($includeOtp) {
             $command->line('   🔑 OTP (One-Time Password):');
             $command->line('      1. Add the trait to your model:');
-            $command->line('         <info>use Kani\\Mfa\\Otp\\Traits\\HasOneTimePasswords;</info>');
+            $command->line('         <info>use AndyDefer\\Mfa\\Otp\\Traits\\HasOneTimePasswords;</info>');
             $command->line('');
             $command->line('      2. Send an OTP:');
             $command->line('         <info>$user->sendOtp("email_verification", "user@example.com", "email");</info>');
@@ -445,7 +445,7 @@ class MfaInstallerService
         if ($includeTotp) {
             $command->line('   🔐 TOTP (Time-based One-Time Password / 2FA):');
             $command->line('      1. Add the trait to your model:');
-            $command->line('         <info>use Kani\\Mfa\\Totp\\Traits\\HasTwoFactorAuthentication;</info>');
+            $command->line('         <info>use AndyDefer\\Mfa\\Totp\\Traits\\HasTwoFactorAuthentication;</info>');
             $command->line('');
             $command->line('      2. Generate a QR code for Google Authenticator:');
             $command->line('         <info>$qrCodeUri = $user->getTwoFactorQrCodeUri();</info>');

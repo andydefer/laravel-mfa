@@ -4,7 +4,7 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Totp\Services;
+namespace AndyDefer\Mfa\Totp\Services;
 
 use OTPHP\TOTP as OTPHPTOTP;
 use ParagonIE\ConstantTime\Base32;

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Tests\Unit\Otp\Services;
+namespace AndyDefer\Mfa\Tests\Unit\Services\Otp;
 
-use Kani\Mfa\Otp\Services\DefaultCodeGenerator;
-use Kani\Mfa\Tests\TestCase;
+use AndyDefer\Mfa\Otp\Services\DefaultCodeGenerator;
+use AndyDefer\Mfa\Tests\TestCase;
 
 /**
  * Test suite for DefaultCodeGenerator service.

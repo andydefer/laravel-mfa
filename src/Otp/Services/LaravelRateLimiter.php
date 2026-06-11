@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Otp\Services;
+namespace AndyDefer\Mfa\Otp\Services;
 
 use Illuminate\Support\Facades\RateLimiter;
-use Kani\Mfa\Otp\Contracts\RateLimiterInterface;
+use AndyDefer\Mfa\Otp\Contracts\RateLimiterInterface;
 
 /**
  * Laravel implementation of the rate limiter interface.

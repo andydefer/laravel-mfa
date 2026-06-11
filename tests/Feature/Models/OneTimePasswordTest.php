@@ -4,13 +4,13 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Tests\Feature\Models;
+namespace AndyDefer\Mfa\Tests\Feature\Models;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
-use Kani\Mfa\Otp\Models\OneTimePassword;
-use Kani\Mfa\Tests\TestCase;
+use AndyDefer\Mfa\Otp\Models\OneTimePassword;
+use AndyDefer\Mfa\Tests\TestCase;
 
 /**
  * Test suite for the OneTimePassword model.

@@ -4,12 +4,12 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Tests\Unit\Commands;
+namespace AndyDefer\Mfa\Tests\Unit\Commands;
 
 use Illuminate\Support\Facades\Artisan;
-use Kani\Mfa\Core\Commands\InstallMfaCommand;
-use Kani\Mfa\Core\Services\MfaInstallerService;
-use Kani\Mfa\Tests\TestCase;
+use AndyDefer\Mfa\Core\Commands\InstallMfaCommand;
+use AndyDefer\Mfa\Core\Services\MfaInstallerService;
+use AndyDefer\Mfa\Tests\TestCase;
 use Mockery;
 
 /**

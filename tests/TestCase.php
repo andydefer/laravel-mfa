@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Tests;
+namespace AndyDefer\Mfa\Tests;
 
 use Carbon\Carbon;
 use Illuminate\Foundation\Application;
-use Kani\Mfa\MfaServiceProvider;
+use AndyDefer\Mfa\MfaServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 /**
@@ -139,7 +139,7 @@ abstract class TestCase extends Orchestra
      */
     private function loadPackageMigrations(): void
     {
-        $packageMigrationsPath = __DIR__.'/../database/migrations';
+        $packageMigrationsPath = __DIR__ . '/../database/migrations';
 
         if (is_dir($packageMigrationsPath)) {
             $this->loadMigrationsFrom($packageMigrationsPath);
@@ -151,7 +151,7 @@ abstract class TestCase extends Orchestra
      */
     private function loadTestMigrations(): void
     {
-        $testMigrationsPath = __DIR__.'/database/migrations';
+        $testMigrationsPath = __DIR__ . '/database/migrations';
 
         if (is_dir($testMigrationsPath)) {
             $this->loadMigrationsFrom($testMigrationsPath);

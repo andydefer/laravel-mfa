@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Otp\Data;
+namespace AndyDefer\Mfa\Otp\Data;
 
-use Kani\Mfa\Otp\Enums\ErrorCode;
-use Kani\Mfa\Otp\Enums\OtpStatus;
+use AndyDefer\Mfa\Otp\Enums\ErrorCode;
+use AndyDefer\Mfa\Otp\Enums\OtpStatus;
 
 /**
  * Immutable DTO for OTP operation responses.

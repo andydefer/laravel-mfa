@@ -4,14 +4,14 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Tests\Feature\Traits;
+namespace AndyDefer\Mfa\Tests\Feature\Traits;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Kani\Mfa\Otp\Data\OtpResponseData;
-use Kani\Mfa\Otp\Models\OneTimePassword;
-use Kani\Mfa\Otp\Services\OtpService;
-use Kani\Mfa\Tests\Support\TestUser;
-use Kani\Mfa\Tests\TestCase;
+use AndyDefer\Mfa\Otp\Data\OtpResponseData;
+use AndyDefer\Mfa\Otp\Models\OneTimePassword;
+use AndyDefer\Mfa\Otp\Services\OtpService;
+use AndyDefer\Mfa\Tests\Support\TestUser;
+use AndyDefer\Mfa\Tests\TestCase;
 use Mockery;
 
 /**

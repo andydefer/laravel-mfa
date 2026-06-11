@@ -4,15 +4,15 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Tests\Unit\Commands;
+namespace AndyDefer\Mfa\Tests\Unit\Commands;
 
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Kani\Mfa\Core\Commands\CleanupMfaCommand;
-use Kani\Mfa\Otp\Models\OneTimePassword;
-use Kani\Mfa\Tests\TestCase;
-use Kani\Mfa\Totp\Services\TOTPService;
+use AndyDefer\Mfa\Core\Commands\CleanupMfaCommand;
+use AndyDefer\Mfa\Otp\Models\OneTimePassword;
+use AndyDefer\Mfa\Tests\TestCase;
+use AndyDefer\Mfa\Totp\Services\TOTPService;
 
 /**
  * Test suite for the CleanupMfaCommand.

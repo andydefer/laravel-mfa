@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Core\Helpers;
+namespace AndyDefer\Mfa\Core\Helpers;
 
 use Illuminate\Support\Facades\Lang;
 

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Tests\Unit\Helpers;
+namespace AndyDefer\Mfa\Tests\Unit\Helpers;
 
-use Kani\Mfa\Core\Helpers\TranslationHelper;
-use Kani\Mfa\Tests\TestCase;
+use AndyDefer\Mfa\Core\Helpers\TranslationHelper;
+use AndyDefer\Mfa\Tests\TestCase;
 
 /**
  * Test suite for TranslationHelper class.

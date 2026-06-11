@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Core\Commands;
+namespace AndyDefer\Mfa\Core\Commands;
 
 use Carbon\CarbonInterface;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
-use Kani\Mfa\Otp\Models\OneTimePassword;
-use Kani\Mfa\Totp\Models\TwoFactorSecret;
+use AndyDefer\Mfa\Otp\Models\OneTimePassword;
+use AndyDefer\Mfa\Totp\Models\TwoFactorSecret;
 
 /**
  * Command to clean expired and old MFA data from the database.

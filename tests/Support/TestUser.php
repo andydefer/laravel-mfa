@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Tests\Support;
+namespace AndyDefer\Mfa\Tests\Support;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
-use Kani\Mfa\Otp\Contracts\MustOtpChannels;
-use Kani\Mfa\Otp\Traits\HasOneTimePasswords;
-use Kani\Mfa\Totp\Traits\HasTwoFactorAuthentication;
+use AndyDefer\Mfa\Otp\Contracts\MustOtpChannels;
+use AndyDefer\Mfa\Otp\Traits\HasOneTimePasswords;
+use AndyDefer\Mfa\Totp\Traits\HasTwoFactorAuthentication;
 
 /**
  * Test model representing a user entity for OTP testing purposes.

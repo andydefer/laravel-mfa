@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Totp\Models;
+namespace AndyDefer\Mfa\Totp\Models;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Kani\Mfa\Totp\Services\TOTPService;
+use AndyDefer\Mfa\Totp\Services\TOTPService;
 
 /**
  * Eloquent model for TOTP (Time-based One-Time Password) secrets.

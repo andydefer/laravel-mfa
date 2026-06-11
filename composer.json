@@ -25,12 +25,12 @@
     ],
     "autoload": {
         "psr-4": {
-            "Kani\\Mfa\\": "src/"
+            "AndyDefer\\Mfa\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Kani\\Mfa\\Tests\\": "tests/"
+            "AndyDefer\\Mfa\\Tests\\": "tests/"
         }
     },
     "config": {
@@ -43,10 +43,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Kani\\Mfa\\MfaServiceProvider"
+                "AndyDefer\\Mfa\\MfaServiceProvider"
             ],
             "aliases": {
-                "Mfa": "Kani\\Mfa\\Facades\\Mfa"
+                "Mfa": "AndyDefer\\Mfa\\Facades\\Mfa"
             }
         }
     },

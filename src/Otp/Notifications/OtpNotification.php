@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Otp\Notifications;
+namespace AndyDefer\Mfa\Otp\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Kani\Mfa\Core\Helpers\TranslationHelper;
-use Kani\Mfa\Otp\Contracts\MustOtpChannels;
-use Kani\Mfa\Otp\Models\OneTimePassword;
+use AndyDefer\Mfa\Core\Helpers\TranslationHelper;
+use AndyDefer\Mfa\Otp\Contracts\MustOtpChannels;
+use AndyDefer\Mfa\Otp\Models\OneTimePassword;
 
 /**
  * Notification for delivering OTP codes to users via configured channels.

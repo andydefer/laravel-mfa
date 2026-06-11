@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Otp\Contracts;
+namespace AndyDefer\Mfa\Otp\Contracts;
 
 /**
  * Interface for entities that require OTP channel configuration.

@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Otp\Services;
+namespace AndyDefer\Mfa\Otp\Services;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Kani\Mfa\Core\Helpers\TranslationHelper;
-use Kani\Mfa\Otp\Contracts\CodeGeneratorInterface;
-use Kani\Mfa\Otp\Contracts\RateLimiterInterface;
-use Kani\Mfa\Otp\Data\OtpResponseData;
-use Kani\Mfa\Otp\Models\OneTimePassword;
-use Kani\Mfa\Otp\Notifications\OtpNotification;
+use AndyDefer\Mfa\Core\Helpers\TranslationHelper;
+use AndyDefer\Mfa\Otp\Contracts\CodeGeneratorInterface;
+use AndyDefer\Mfa\Otp\Contracts\RateLimiterInterface;
+use AndyDefer\Mfa\Otp\Data\OtpResponseData;
+use AndyDefer\Mfa\Otp\Models\OneTimePassword;
+use AndyDefer\Mfa\Otp\Notifications\OtpNotification;
 
 /**
  * Core service for One-Time Password (OTP) operations.

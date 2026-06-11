@@ -136,8 +136,8 @@ Ajoutez les traits à votre modèle `User` :
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Kani\Mfa\Otp\Traits\HasOneTimePasswords;
-use Kani\Mfa\Totp\Traits\HasTwoFactorAuthentication;
+use AndyDefer\Mfa\Otp\Traits\HasOneTimePasswords;
+use AndyDefer\Mfa\Totp\Traits\HasTwoFactorAuthentication;
 
 class User extends Authenticatable
 {
@@ -157,7 +157,7 @@ Si vous souhaitez personnaliser les canaux de livraison OTP (email, SMS, WhatsAp
 
 namespace App\Models;
 
-use Kani\Mfa\Otp\Contracts\MustOtpChannels;
+use AndyDefer\Mfa\Otp\Contracts\MustOtpChannels;
 
 class User extends Authenticatable implements MustOtpChannels
 {
@@ -401,7 +401,7 @@ MFA_OTP_LOCALE=en    # Anglais
 ### Utiliser le helper de traduction
 
 ```php
-use Kani\Mfa\Core\Helpers\TranslationHelper;
+use AndyDefer\Mfa\Core\Helpers\TranslationHelper;
 
 // Traduire un message
 $message = TranslationHelper::trans('messages.send_success');

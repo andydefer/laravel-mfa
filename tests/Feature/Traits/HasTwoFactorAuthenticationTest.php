@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Kani\Mfa\Tests\Feature\Traits;
+namespace AndyDefer\Mfa\Tests\Feature\Traits;
 
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Kani\Mfa\Tests\Support\TestUser;
-use Kani\Mfa\Tests\TestCase;
-use Kani\Mfa\Totp\Models\TwoFactorSecret;
-use Kani\Mfa\Totp\Services\TOTPService;
+use AndyDefer\Mfa\Tests\Support\TestUser;
+use AndyDefer\Mfa\Tests\TestCase;
+use AndyDefer\Mfa\Totp\Models\TwoFactorSecret;
+use AndyDefer\Mfa\Totp\Services\TOTPService;
 
 /**
  * Test suite for HasTwoFactorAuthentication trait.
