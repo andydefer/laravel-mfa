@@ -53,7 +53,7 @@
     "require": {
         "php": ">=8.1",
         "andydefer/domain-structures": "^1.18.1",
-        "andydefer/laravel-directive": "^3.19.0",
+        "andydefer/laravel-directive": "^3.19.1",
         "andydefer/laravel-repository": "^2.8.1",
         "andydefer/php-vo": "^0.8.1",
         "bacon/bacon-qr-code": "^3.1",
