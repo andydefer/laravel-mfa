@@ -3,7 +3,8 @@
 composer.lock
 
 # Documentation générée
-/docs/
+/docs/diffs/
+/prompts/
 diff.txt
 note.md
 

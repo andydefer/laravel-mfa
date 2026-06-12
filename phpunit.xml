@@ -6,11 +6,14 @@
     colors="true"
 >
     <testsuites>
-        <testsuite name="Unit">
+        <!-- <testsuite name="Unit">
             <directory suffix="Test.php">./tests/Unit</directory>
         </testsuite>
         <testsuite name="Integration">
             <directory suffix="Test.php">./tests/Integration</directory>
+        </testsuite> -->
+        <testsuite name="BoilerPlate">
+            <directory suffix="Test.php">./tests/BoilerPlate</directory>
         </testsuite>
     </testsuites>
     <php>
