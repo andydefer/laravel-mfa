@@ -2,28 +2,20 @@
 
 declare(strict_types=1);
 
-namespace YourVendor\OneTimePassword\Database\Migrations;
+namespace AndyDefer\Mfa\Database\Migrations;
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
-/**
- * Migration that creates the one_time_passwords table for storing OTP records.
- *
- * This table supports polymorphic relationships with any model (users, admins, etc.),
- * tracks verification attempts, expiration timestamps, and delivery channels for
- * one-time password management.
- */
 return new class extends Migration
 {
-    /**
-     * Run the migration and create the one_time_passwords table.
-     */
     public function up(): void
     {
         Schema::create('one_time_passwords', function (Blueprint $table): void {
-            $table->id();
+            // ✅ UUID comme clé primaire
+            $table->uuid('id')->primary();
 
             // Polymorphic relationship columns (otpable_type, otpable_id)
             $table->morphs('otpable');
@@ -63,9 +55,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migration and drop the one_time_passwords table.
-     */
     public function down(): void
     {
         Schema::dropIfExists('one_time_passwords');

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AndyDefer\Mfa\Core\Helpers;
 
+use AndyDefer\Mfa\Core\Services\TranslationService;
+use AndyDefer\Mfa\Tests\Unit\Core\Services\TranslationServiceTest;
 use Illuminate\Support\Facades\Lang;
 
 /**
@@ -13,26 +15,48 @@ use Illuminate\Support\Facades\Lang;
  * configured locale instead of the global application locale.
  * It ensures consistent translations regardless of the parent application's
  * current locale settings.
+ *
+ * @deprecated This class is deprecated and will be removed in version 3.0.0.
+ *
+ *             ❌ WHY DEPRECATED?
+ *
+ *             This helper uses static methods and the Lang facade, which:
+ *             - Cannot be mocked in tests
+ *             - Creates hidden dependencies
+ *             - Violates the Dependency Inversion Principle (DIP)
+ *
+ *             ✅ NEW APPROACH:
+ *
+ *             Use the TranslationService instead, which:
+ *             - Is fully mockable for unit tests
+ *             - Uses dependency injection
+ *             - Respects SOLID principles
+ *             - Has no static methods or facades
+ *             @see TranslationService
+ *             @see TranslationServiceTest
+ *
+ * @example
+ * // ❌ Deprecated
+ * TranslationHelper::trans('messages.welcome');
+ *
+ * // ✅ Recommended
+ * $translationService = app(TranslationService::class);
+ * $translationService->trans('messages.welcome');
+ *
+ * @author Andy Defer
+ *
+ * @deprecated since 2.0.0, will be removed in 3.0.0
  */
 final class TranslationHelper
 {
     /**
      * Retrieves a translated message using the package's configured locale.
      *
-     * This method bypasses the global Laravel locale system to provide
-     * package-specific translations independently of the main application's
-     * language settings.
+     * @deprecated Use TranslationService::trans() instead
      *
      * @param  string  $key  Translation key in format 'file.key' (e.g., 'messages.subject')
      * @param  array<string, mixed>  $replace  Placeholder values for translation interpolation
      * @return string Translated message with placeholders replaced
-     *
-     * @example
-     * // Returns "Two-factor authentication code"
-     * TranslationHelper::trans('messages.2fa_code');
-     * @example
-     * // Returns "Please enter your verification code"
-     * TranslationHelper::trans('messages.enter_code', ['code' => '123456']);
      */
     public static function trans(string $key, array $replace = []): string
     {
@@ -48,6 +72,8 @@ final class TranslationHelper
      * 1. Configured package locale (validated against supported locales)
      * 2. Fallback locale from configuration
      * 3. Hardcoded 'en' as ultimate fallback (configuration should always provide this)
+     *
+     * @deprecated This method will be removed with the class in version 3.0.0
      *
      * @return string Validated locale code to use for translations
      */
@@ -67,6 +93,8 @@ final class TranslationHelper
     /**
      * Retrieves the configured package locale from the application config.
      *
+     * @deprecated This method will be removed with the class in version 3.0.0
+     *
      * @return string Configured locale code, or 'en' if not properly configured
      */
     private static function getConfiguredLocale(): string
@@ -78,6 +106,8 @@ final class TranslationHelper
 
     /**
      * Retrieves the configured fallback locale from the application config.
+     *
+     * @deprecated This method will be removed with the class in version 3.0.0
      *
      * @return string Fallback locale code, or 'en' if not properly configured
      */
@@ -91,6 +121,8 @@ final class TranslationHelper
     /**
      * Retrieves the list of supported locales from the application config.
      *
+     * @deprecated This method will be removed with the class in version 3.0.0
+     *
      * @return array<int, string> List of supported locale codes
      */
     private static function getSupportedLocales(): array
@@ -102,6 +134,8 @@ final class TranslationHelper
 
     /**
      * Validates whether a given locale is in the list of supported locales.
+     *
+     * @deprecated This method will be removed with the class in version 3.0.0
      *
      * @param  string  $locale  Locale code to validate
      * @param  array<int, string>  $supportedLocales  List of allowed locale codes

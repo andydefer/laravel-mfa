@@ -6,10 +6,10 @@ declare(strict_types=1);
 
 namespace AndyDefer\Mfa\Tests\Unit\Commands;
 
-use Illuminate\Support\Facades\Artisan;
 use AndyDefer\Mfa\Core\Commands\InstallMfaCommand;
 use AndyDefer\Mfa\Core\Services\MfaInstallerService;
 use AndyDefer\Mfa\Tests\TestCase;
+use Illuminate\Support\Facades\Artisan;
 use Mockery;
 
 /**

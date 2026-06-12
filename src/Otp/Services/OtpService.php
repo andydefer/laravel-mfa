@@ -1,586 +1,558 @@
 <?php
+// src/Otp/Services/OtpService.php
 
 declare(strict_types=1);
 
 namespace AndyDefer\Mfa\Otp\Services;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Hashing\HashManager;
 use Illuminate\Support\Facades\Log;
-use AndyDefer\Mfa\Core\Helpers\TranslationHelper;
+use Illuminate\Support\Str;
+use AndyDefer\DomainStructures\Services\HydrationService;
+use AndyDefer\DomainStructures\Utils\StrictDataObject;
+use AndyDefer\Mfa\Configs\MfaConfig;
+use AndyDefer\Mfa\Core\Contracts\Configs\MessageConfigInterface;
+use AndyDefer\Mfa\Core\Services\TranslationService;
 use AndyDefer\Mfa\Otp\Contracts\CodeGeneratorInterface;
 use AndyDefer\Mfa\Otp\Contracts\RateLimiterInterface;
-use AndyDefer\Mfa\Otp\Data\OtpResponseData;
+use AndyDefer\Mfa\Otp\Contexts\OtpProcessingContext;
+use AndyDefer\Mfa\Otp\Enums\OtpProcessingStep;
 use AndyDefer\Mfa\Otp\Models\OneTimePassword;
 use AndyDefer\Mfa\Otp\Notifications\OtpNotification;
+use AndyDefer\Mfa\Otp\Repositories\OneTimePasswordRepository;
+use AndyDefer\Mfa\Records\OtpResultRecord;
+use AndyDefer\PhpVo\ValueObjects\DateTimeVO;
 
-/**
- * Core service for One-Time Password (OTP) operations.
- *
- * Handles the complete OTP lifecycle including generation, sending,
- * verification, resending, and cancellation. Integrates with rate limiting
- * to prevent abuse and brute-force attacks.
- */
 class OtpService
 {
-    /**
-     * Create a new OTP service instance.
-     *
-     * @param  CodeGeneratorInterface  $codeGenerator  Generator for OTP codes
-     * @param  RateLimiterInterface  $rateLimiter  Rate limiter for abuse prevention
-     * @param  int  $defaultExpiryMinutes  Default OTP lifetime in minutes
-     * @param  int  $defaultMaxAttempts  Default maximum verification attempts
-     * @param  int  $rateLimitRequests  Maximum requests per time window
-     * @param  int  $rateLimitVerifications  Maximum verifications per time window
-     * @param  int  $rateLimitDecayMinutes  Rate limit window duration in minutes
-     * @param  int  $failedVerificationDecaySeconds  Decay time for failed verifications
-     * @param  int  $rateLimitHitDecaySeconds  Decay time for rate limit hits
-     */
+    private HydrationService $hydration;
+
     public function __construct(
         private readonly CodeGeneratorInterface $codeGenerator,
         private readonly RateLimiterInterface $rateLimiter,
-        private readonly int $defaultExpiryMinutes = 10,
-        private readonly int $defaultMaxAttempts = 3,
-        private readonly int $rateLimitRequests = 3,
-        private readonly int $rateLimitVerifications = 5,
-        private readonly int $rateLimitDecayMinutes = 60,
-        private readonly int $failedVerificationDecaySeconds = 300,
-        private readonly int $rateLimitHitDecaySeconds = 60
-    ) {}
+        private readonly TranslationService $translator,
+        private readonly MessageConfigInterface $messageConfig,
+        private readonly HashManager $hash,
+        private readonly OneTimePasswordRepository $otpRepository,
+        private readonly MfaConfig $config,
+    ) {
+        $this->hydration = new HydrationService();
+    }
 
-    /**
-     * Send a new OTP to the specified destination.
-     *
-     * Creates an OTP record, stores it in the database, sends the notification,
-     * and applies rate limiting. Previous pending OTPs are automatically deleted.
-     *
-     * @param  Model  $otpable  The entity requesting the OTP (User, Admin, etc.)
-     * @param  string  $type  OTP type (email_verification, password_reset, 2fa, etc.)
-     * @param  string  $destination  Destination address (email, phone number)
-     * @param  array|null  $channels  Delivery channels to use (mail, sms, whatsapp)
-     * @param  array|null  $metadata  Additional metadata (IP, user agent, etc.)
-     * @param  int|null  $expiresInMinutes  Custom expiry time (uses default if null)
-     * @param  int|null  $maxAttempts  Custom max attempts (uses default if null)
-     * @return OtpResponseData Response containing success status and metadata
-     */
     public function send(
         Model $otpable,
-        string $type,
-        string $destination,
+        OtpProcessingContext $context,
         ?array $channels = null,
         ?array $metadata = null,
-        ?int $expiresInMinutes = null,
-        ?int $maxAttempts = null
-    ): OtpResponseData {
-        $rateLimitKey = $this->buildRequestRateLimitKey($otpable, $type, $destination);
+    ): OtpProcessingContext {
+        $context->setCurrentStep(OtpProcessingStep::SENDING);
 
-        if ($this->isRateLimitExceeded($rateLimitKey, $this->rateLimitRequests)) {
-            return $this->createRateLimitedResponse($rateLimitKey);
+        $rateLimitKey = $this->buildRequestRateLimitKey($otpable, $context);
+
+        if ($this->isRateLimitExceeded($rateLimitKey, $this->config->otpSecurityConfig()->rate_limit_requests)) {
+            $context->setError($this->translator->trans($this->messageConfig->rateLimited(), ['seconds' => 60]));
+            $context->setFinalResult(new OtpResultRecord(
+                is_success: false,
+                message: $this->translator->trans($this->messageConfig->rateLimited(), ['seconds' => 60]),
+                data: null,
+                occurred_at: new DateTimeVO(null),
+            ));
+            return $context;
         }
 
-        $this->deleteOldPendingOtps($otpable, $type, $destination);
+        $this->deleteOldPendingOtps($otpable, $context);
 
         $plainCode = $this->codeGenerator->generate();
+        $expiryMinutes = $this->config->otpConfig()->default_expiry_minutes;
+        $maxAttempts = $this->config->otpConfig()->default_max_attempts;
 
-        $otpRecord = $this->createOtpRecord(
+        $otpModel = $this->createOtpModel(
             otpable: $otpable,
-            type: $type,
-            destination: $destination,
+            context: $context,
             channels: $channels,
             metadata: $metadata,
-            expiresInMinutes: $expiresInMinutes ?? $this->defaultExpiryMinutes,
-            maxAttempts: $maxAttempts ?? $this->defaultMaxAttempts,
+            expiresInMinutes: $expiryMinutes,
+            maxAttempts: $maxAttempts,
             plainCode: $plainCode
         );
 
-        $notificationSent = $this->sendOtpNotification($otpable, $otpRecord, $plainCode);
+        $context->setOtpRecord($otpModel, $plainCode);
+        $context->addMetadata('expires_in_minutes', (string) $expiryMinutes);
+        $context->addMetadata('expires_at', $otpModel->expires_at?->toIso8601String() ?? '');
 
-        if (! $notificationSent) {
-            $otpRecord->delete();
+        $notificationSent = $this->sendOtpNotification($otpable, $otpModel, $plainCode);
 
-            return OtpResponseData::sendFailed(TranslationHelper::trans('messages.send_failed'));
+        if (!$notificationSent) {
+            $this->otpRepository->delete($otpModel->id);
+            $context->setError($this->translator->trans($this->messageConfig->sendFailed()));
+            $context->setFinalResult(new OtpResultRecord(
+                is_success: false,
+                message: $this->translator->trans($this->messageConfig->sendFailed()),
+                data: null,
+                occurred_at: new DateTimeVO(null),
+            ));
+            return $context;
         }
 
         $this->recordRateLimitHit($rateLimitKey);
+        $context->setFinalResult(new OtpResultRecord(
+            is_success: true,
+            message: $this->translator->trans($this->messageConfig->sendSuccess()),
+            data: new StrictDataObject([
+                'expires_at' => $otpModel->expires_at?->toIso8601String(),
+                'expires_in_minutes' => $expiryMinutes,
+            ]),
+            occurred_at: new DateTimeVO(null),
+        ));
+        $context->setCurrentStep(OtpProcessingStep::SENT);
 
-        return OtpResponseData::success(
-            data: [
-                'expires_at' => $otpRecord->expires_at->toIso8601String(),
-                'expires_in_minutes' => $expiresInMinutes ?? $this->defaultExpiryMinutes,
-            ],
-            message: TranslationHelper::trans('messages.send_success')
-        );
+        return $context;
     }
 
-    /**
-     * Resend an OTP, cancelling any pending OTP first.
-     *
-     * If no pending OTP exists, falls back to sending a new one.
-     * Reuses previous channels and metadata if not explicitly provided.
-     *
-     * @param  Model  $otpable  The entity requesting the OTP
-     * @param  string  $type  OTP type
-     * @param  string  $destination  Destination address
-     * @param  array|null  $channels  Delivery channels (reuses previous if null)
-     * @param  array|null  $metadata  Additional metadata (reuses previous if null)
-     * @param  int|null  $expiresInMinutes  Custom expiry time
-     * @param  int|null  $maxAttempts  Custom max attempts (reuses previous if null)
-     * @return OtpResponseData Response containing success status and metadata
-     */
     public function resend(
         Model $otpable,
-        string $type,
-        string $destination,
+        OtpProcessingContext $context,
         ?array $channels = null,
         ?array $metadata = null,
-        ?int $expiresInMinutes = null,
-        ?int $maxAttempts = null
-    ): OtpResponseData {
-        $pendingOtp = $this->findPendingOtp($otpable, $type, $destination);
+    ): OtpProcessingContext {
+        $context->setCurrentStep(OtpProcessingStep::RESENDING);
 
-        if (! $pendingOtp) {
-            return $this->send($otpable, $type, $destination, $channels, $metadata, $expiresInMinutes, $maxAttempts);
+        $pendingOtpModel = $this->findPendingOtp($otpable, $context);
+
+        if (!$pendingOtpModel) {
+            return $this->send($otpable, $context, $channels, $metadata);
         }
 
-        $rateLimitKey = $this->buildRequestRateLimitKey($otpable, $type, $destination);
+        $rateLimitKey = $this->buildRequestRateLimitKey($otpable, $context);
 
-        if ($this->isRateLimitExceeded($rateLimitKey, $this->rateLimitRequests)) {
-            return $this->createRateLimitedResponse($rateLimitKey);
+        if ($this->isRateLimitExceeded($rateLimitKey, $this->config->otpSecurityConfig()->rate_limit_requests)) {
+            $context->setError($this->translator->trans($this->messageConfig->rateLimited(), ['seconds' => 60]));
+            $context->setFinalResult(new OtpResultRecord(
+                is_success: false,
+                message: $this->translator->trans($this->messageConfig->rateLimited(), ['seconds' => 60]),
+                data: null,
+                occurred_at: new DateTimeVO(null),
+            ));
+            return $context;
         }
 
         $plainCode = $this->codeGenerator->generate();
+        $expiryMinutes = $this->config->otpConfig()->default_expiry_minutes;
 
-        $newOtpRecord = $this->createOtpRecord(
+        $channelsToUse = $channels ?? $pendingOtpModel->channels;
+        $metadataToUse = $metadata ?? ($pendingOtpModel->meta ?? null);
+        $maxAttemptsToUse = $pendingOtpModel->max_attempts ?? $this->config->otpConfig()->default_max_attempts;
+
+        $this->cancelOtpModel($pendingOtpModel);
+        $pendingOtpModel->refresh();
+
+        $newOtpModel = $this->createOtpModel(
             otpable: $otpable,
-            type: $type,
-            destination: $destination,
-            channels: $channels ?? $pendingOtp->channels,
-            metadata: $metadata ?? $pendingOtp->meta,
-            expiresInMinutes: $expiresInMinutes ?? $this->defaultExpiryMinutes,
-            maxAttempts: $maxAttempts ?? $pendingOtp->max_attempts,
+            context: $context,
+            channels: $channelsToUse,
+            metadata: $metadataToUse,
+            expiresInMinutes: $expiryMinutes,
+            maxAttempts: $maxAttemptsToUse,
             plainCode: $plainCode
         );
 
-        $pendingOtp->markAsCancelled();
+        $context->setOtpRecord($newOtpModel, $plainCode);
 
-        $notificationSent = $this->sendOtpNotification($otpable, $newOtpRecord, $plainCode);
+        $notificationSent = $this->sendOtpNotification($otpable, $newOtpModel, $plainCode);
 
-        if (! $notificationSent) {
-            $newOtpRecord->delete();
-
-            return OtpResponseData::resendFailed(TranslationHelper::trans('messages.resend_failed'));
+        if (!$notificationSent) {
+            $this->otpRepository->delete($newOtpModel->id);
+            $context->setError($this->translator->trans($this->messageConfig->resendFailed()));
+            $context->setFinalResult(new OtpResultRecord(
+                is_success: false,
+                message: $this->translator->trans($this->messageConfig->resendFailed()),
+                data: null,
+                occurred_at: new DateTimeVO(null),
+            ));
+            return $context;
         }
 
         $this->recordRateLimitHit($rateLimitKey);
+        $context->setFinalResult(new OtpResultRecord(
+            is_success: true,
+            message: $this->translator->trans($this->messageConfig->resendSuccess()),
+            data: new StrictDataObject([
+                'expires_at' => $newOtpModel->expires_at?->toIso8601String(),
+                'expires_in_minutes' => $expiryMinutes,
+            ]),
+            occurred_at: new DateTimeVO(null),
+        ));
+        $context->setCurrentStep(OtpProcessingStep::RESENT);
 
-        return OtpResponseData::success(
-            data: [
-                'expires_at' => $newOtpRecord->expires_at->toIso8601String(),
-                'expires_in_minutes' => $expiresInMinutes ?? $this->defaultExpiryMinutes,
-            ],
-            message: TranslationHelper::trans('messages.resend_success')
-        );
+        return $context;
     }
 
-    /**
-     * Verify an OTP code provided by the user.
-     *
-     * Checks rate limiting, OTP existence, expiration, attempts limit,
-     * and code validity. Marks the OTP as verified and optionally consumed.
-     *
-     * @param  Model  $otpable  The entity attempting verification
-     * @param  string  $code  The OTP code provided by the user
-     * @param  string  $type  OTP type
-     * @param  string  $destination  Destination address
-     * @param  bool  $consume  Whether to mark the OTP as used after verification
-     * @return OtpResponseData Response with verification status
-     */
     public function verify(
         Model $otpable,
         string $code,
-        string $type,
-        string $destination,
-        bool $consume = true
-    ): OtpResponseData {
-        $rateLimitKey = $this->buildVerificationRateLimitKey($otpable, $type, $destination);
+        OtpProcessingContext $context,
+        bool $consume = true,
+    ): OtpProcessingContext {
+        $context->setCurrentStep(OtpProcessingStep::VERIFYING);
+        $context->recordAttempt($code, false);
 
-        if ($this->isRateLimitExceeded($rateLimitKey, $this->rateLimitVerifications)) {
-            return $this->createRateLimitedResponse($rateLimitKey);
+        $rateLimitKey = $this->buildVerificationRateLimitKey($otpable, $context);
+
+        if ($this->isRateLimitExceeded($rateLimitKey, $this->config->otpSecurityConfig()->rate_limit_verifications)) {
+            $context->setError($this->translator->trans($this->messageConfig->rateLimited(), ['seconds' => 60]));
+            $context->setFinalResult(new OtpResultRecord(
+                is_success: false,
+                message: $this->translator->trans($this->messageConfig->rateLimited(), ['seconds' => 60]),
+                data: null,
+                occurred_at: new DateTimeVO(null),
+            ));
+            return $context;
         }
 
-        // Find OTP without expiration filter first
-        $otpRecord = $this->findOtpForVerification($otpable, $type, $destination);
+        $otpModel = $this->findOtpForVerification($otpable, $context);
 
-        if (! $otpRecord) {
+        if (!$otpModel) {
             $this->recordFailedVerificationAttempt($rateLimitKey);
-
-            return OtpResponseData::notFound(TranslationHelper::trans('messages.otp_not_found'));
+            $context->recordAttempt($code, false, $this->translator->trans($this->messageConfig->otpNotFound()));
+            $context->setError($this->translator->trans($this->messageConfig->otpNotFound()));
+            $context->setFinalResult(new OtpResultRecord(
+                is_success: false,
+                message: $this->translator->trans($this->messageConfig->otpNotFound()),
+                data: null,
+                occurred_at: new DateTimeVO(null),
+            ));
+            return $context;
         }
 
-        // Check expiration first
-        if ($otpRecord->isExpired()) {
-            $otpRecord->markAsCancelled();
+        if ($otpModel->isExpired()) {
+            $this->cancelOtpModel($otpModel);
             $this->recordFailedVerificationAttempt($rateLimitKey);
-
-            return OtpResponseData::expiredCode(TranslationHelper::trans('messages.expired_code'));
+            $context->recordAttempt($code, false, $this->translator->trans($this->messageConfig->expiredCode()));
+            $context->setError($this->translator->trans($this->messageConfig->expiredCode()));
+            $context->setFinalResult(new OtpResultRecord(
+                is_success: false,
+                message: $this->translator->trans($this->messageConfig->expiredCode()),
+                data: null,
+                occurred_at: new DateTimeVO(null),
+            ));
+            return $context;
         }
 
-        if ($otpRecord->isUsed() || $otpRecord->isVerified()) {
+        if ($otpModel->isUsed()) {
             $this->recordFailedVerificationAttempt($rateLimitKey);
-
-            return OtpResponseData::notFound(TranslationHelper::trans('messages.otp_not_found'));
+            $context->recordAttempt($code, false, $this->translator->trans($this->messageConfig->otpNotFound()));
+            $context->setError($this->translator->trans($this->messageConfig->otpNotFound()));
+            $context->setFinalResult(new OtpResultRecord(
+                is_success: false,
+                message: $this->translator->trans($this->messageConfig->otpNotFound()),
+                data: null,
+                occurred_at: new DateTimeVO(null),
+            ));
+            return $context;
         }
 
-        if (! $otpRecord->verifyCode($code)) {
-            return $this->handleFailedVerification($otpRecord, $rateLimitKey);
+        if ($otpModel->isVerified()) {
+            if (!$consume) {
+                $context->recordAttempt($code, true);
+                $context->markAsVerified();
+
+                $context->setFinalResult(new OtpResultRecord(
+                    is_success: true,
+                    message: $this->translator->trans($this->messageConfig->verifySuccess()),
+                    data: new StrictDataObject([
+                        'meta' => $otpModel->meta,
+                        'consumed' => false,
+                        'already_verified' => true,
+                    ]),
+                    occurred_at: new DateTimeVO(null),
+                ));
+                $context->setCurrentStep(OtpProcessingStep::VERIFIED);
+
+                return $context;
+            }
+
+            if ($consume) {
+                if (!$this->verifyCode($otpModel, $code)) {
+                    return $this->handleFailedVerification($otpModel, $rateLimitKey, $context, $code);
+                }
+
+                $this->markAsUsed($otpModel);
+                $context->recordAttempt($code, true);
+                $context->markAsVerified();
+                $context->markAsConsumed();
+
+                $this->rateLimiter->clear($rateLimitKey);
+                $this->rateLimiter->clear($this->buildRequestRateLimitKey($otpable, $context));
+
+                $context->setFinalResult(new OtpResultRecord(
+                    is_success: true,
+                    message: $this->translator->trans($this->messageConfig->verifySuccess()),
+                    data: new StrictDataObject([
+                        'meta' => $otpModel->meta,
+                        'consumed' => true,
+                    ]),
+                    occurred_at: new DateTimeVO(null),
+                ));
+                $context->setCurrentStep(OtpProcessingStep::VERIFIED);
+
+                return $context;
+            }
         }
 
-        return $this->handleSuccessfulVerification($otpRecord, $rateLimitKey, $consume, $otpable, $type, $destination);
+        if (!$this->verifyCode($otpModel, $code)) {
+            return $this->handleFailedVerification($otpModel, $rateLimitKey, $context, $code);
+        }
+
+        return $this->handleSuccessfulVerification($otpModel, $rateLimitKey, $context, $code, $consume, $otpable);
     }
 
-    /**
-     * Find an OTP for verification (including expired ones).
-     *
-     * @param  Model  $otpable  The entity
-     * @param  string  $type  OTP type
-     * @param  string  $destination  Destination address
-     * @return OneTimePassword|null The OTP or null
-     */
-    private function findOtpForVerification(Model $otpable, string $type, string $destination): ?OneTimePassword
+    public function cancel(Model $otpable, OtpProcessingContext $context): OtpProcessingContext
     {
-        return OneTimePassword::where('otpable_type', $otpable->getMorphClass())
-            ->where('otpable_id', $otpable->getKey())
-            ->where('type', $type)
-            ->where('destination', $destination)
-            ->whereNull('verified_at')
-            ->whereNull('used_at')
-            ->whereNull('cancelled_at')
-            ->latest()
-            ->first();
-    }
-
-    /**
-     * Cancel all pending OTPs for a given entity, type, and destination.
-     *
-     * @param  Model  $otpable  The entity whose OTPs should be cancelled
-     * @param  string  $type  OTP type
-     * @param  string  $destination  Destination address
-     * @return OtpResponseData Response with count of cancelled OTPs
-     */
-    public function cancel(Model $otpable, string $type, string $destination): OtpResponseData
-    {
-        $cancelledCount = $otpable->cancelOtps($type, $destination);
+        $cancelledCount = $this->cancelPendingOtps($otpable, $context);
 
         $message = $cancelledCount > 0
-            ? TranslationHelper::trans('messages.cancel_success', ['count' => $cancelledCount])
-            : TranslationHelper::trans('messages.no_pending_to_cancel');
+            ? $this->translator->trans($this->messageConfig->cancelSuccess(), ['count' => $cancelledCount])
+            : $this->translator->trans($this->messageConfig->noPendingToCancel());
 
-        return OtpResponseData::success(
-            data: ['cancelled_count' => $cancelledCount],
-            message: $message
-        );
+        $context->setFinalResult(new OtpResultRecord(
+            is_success: true,
+            message: $message,
+            data: new StrictDataObject(['cancelled_count' => $cancelledCount]),
+            occurred_at: new DateTimeVO(null),
+        ));
+        $context->setCurrentStep(OtpProcessingStep::CANCELLED);
+
+        return $context;
     }
 
-    /**
-     * Hash a plain text code for secure storage.
-     *
-     * @param  string  $plainCode  The plain code to hash
-     * @return string Hashed code
-     */
+    // ============================================================================
+    // Private Helper Methods
+    // ============================================================================
+
+    private function verifyCode(OneTimePassword $model, string $plainCode): bool
+    {
+        return $this->hash->check($plainCode, $model->token_hash);
+    }
+
+    private function markAsVerified(OneTimePassword $model): void
+    {
+        $model->verified_at = now();
+        $model->save();
+    }
+
+    private function markAsUsed(OneTimePassword $model): void
+    {
+        $model->used_at = now();
+        $model->save();
+    }
+
+    private function cancelOtpModel(OneTimePassword $model): void
+    {
+        $model->cancelled_at = now();
+        $model->save();
+    }
+
+    private function incrementAttempts(OneTimePassword $model): void
+    {
+        $model->attempts++;
+        $model->save();
+    }
+
     private function hashPlainCode(string $plainCode): string
     {
-        return Hash::make($plainCode);
+        return $this->hash->make($plainCode);
     }
 
-    /**
-     * Check if a rate limit has been exceeded for a given key.
-     *
-     * @param  string  $key  Rate limit key
-     * @param  int  $limit  Maximum allowed attempts
-     * @return bool True if rate limit exceeded
-     */
     private function isRateLimitExceeded(string $key, int $limit): bool
     {
         return $this->rateLimiter->isExceeded($key, $limit);
     }
 
-    /**
-     * Record a hit on the rate limiter for a given key.
-     *
-     * @param  string  $key  Rate limit key
-     */
     private function recordRateLimitHit(string $key): void
     {
-        $this->rateLimiter->hit($key, $this->rateLimitHitDecaySeconds);
+        $this->rateLimiter->hit($key, $this->config->otpSecurityConfig()->rate_limit_hit_decay_seconds);
     }
 
-    /**
-     * Record a failed verification attempt on the rate limiter.
-     *
-     * @param  string  $key  Rate limit key
-     */
     private function recordFailedVerificationAttempt(string $key): void
     {
-        $this->rateLimiter->hit($key, $this->failedVerificationDecaySeconds);
+        $this->rateLimiter->hit($key, $this->config->otpSecurityConfig()->failed_verification_decay_seconds);
     }
 
-    /**
-     * Create a rate limited response with appropriate wait time.
-     *
-     * @param  string  $key  Rate limit key
-     * @return OtpResponseData Rate limited response
-     */
-    private function createRateLimitedResponse(string $key): OtpResponseData
-    {
-        $waitSeconds = $this->rateLimiter->getAvailableInSeconds($key);
-
-        return OtpResponseData::rateLimited(
-            TranslationHelper::trans('messages.rate_limited', ['seconds' => $waitSeconds])
-        );
-    }
-
-    /**
-     * Handle a failed verification attempt.
-     *
-     * @param  OneTimePassword  $otpRecord  The OTP record
-     * @param  string  $rateLimitKey  Rate limit key
-     * @return OtpResponseData Response based on attempt count
-     */
-    private function handleFailedVerification(OneTimePassword $otpRecord, string $rateLimitKey): OtpResponseData
-    {
-        $otpRecord->incrementAttempts();
-        $this->recordFailedVerificationAttempt($rateLimitKey);
-
-        $remainingAttempts = $otpRecord->max_attempts - $otpRecord->attempts;
-
-        if ($otpRecord->hasExceededMaxAttempts()) {
-            $otpRecord->markAsCancelled();
-
-            return OtpResponseData::maxAttemptsExceeded(
-                TranslationHelper::trans('messages.max_attempts_exceeded')
-            );
-        }
-
-        $message = $remainingAttempts > 1
-            ? TranslationHelper::trans('messages.invalid_code_attempts_remaining', ['attempts' => $remainingAttempts])
-            : TranslationHelper::trans('messages.invalid_code_one_attempt_remaining');
-
-        return OtpResponseData::invalidCode($message);
-    }
-
-    /**
-     * Handle a successful verification attempt.
-     *
-     * @param  OneTimePassword  $otpRecord  The OTP record
-     * @param  string  $rateLimitKey  Rate limit key for verification
-     * @param  bool  $consume  Whether to mark as used
-     * @param  Model  $otpable  The entity being verified
-     * @param  string  $type  OTP type
-     * @param  string  $destination  Destination address
-     * @return OtpResponseData Success response
-     */
-    private function handleSuccessfulVerification(
-        OneTimePassword $otpRecord,
-        string $rateLimitKey,
-        bool $consume,
+    private function createOtpModel(
         Model $otpable,
-        string $type,
-        string $destination
-    ): OtpResponseData {
-        $otpRecord->markAsVerified();
-
-        if ($consume) {
-            $otpRecord->markAsUsed();
-        }
-
-        $this->rateLimiter->clear($rateLimitKey);
-        $this->rateLimiter->clear($this->buildRequestRateLimitKey($otpable, $type, $destination));
-
-        return OtpResponseData::success(
-            data: ['meta' => $otpRecord->meta],
-            message: TranslationHelper::trans('messages.verify_success')
-        );
-    }
-
-    /**
-     * Create a new OTP record in the database.
-     *
-     * @param  Model  $otpable  The entity requesting the OTP
-     * @param  string  $type  OTP type
-     * @param  string  $destination  Destination address
-     * @param  array|null  $channels  Delivery channels
-     * @param  array|null  $metadata  Additional metadata
-     * @param  int  $expiresInMinutes  Expiry time in minutes
-     * @param  int  $maxAttempts  Maximum verification attempts
-     * @param  string  $plainCode  Plain code to hash and store
-     * @return OneTimePassword The created OTP record
-     */
-    private function createOtpRecord(
-        Model $otpable,
-        string $type,
-        string $destination,
+        OtpProcessingContext $context,
         ?array $channels,
         ?array $metadata,
         int $expiresInMinutes,
         int $maxAttempts,
-        string $plainCode
+        string $plainCode,
     ): OneTimePassword {
-        return OneTimePassword::create([
+        $data = [
             'otpable_type' => $otpable->getMorphClass(),
             'otpable_id' => $otpable->getKey(),
             'token_hash' => $this->hashPlainCode($plainCode),
-            'type' => $type,
-            'destination' => $destination,
+            'type' => $context->getType(),
+            'destination' => $context->getDestination(),
             'channels' => $channels,
             'meta' => $metadata,
             'max_attempts' => $maxAttempts,
             'expires_at' => now()->addMinutes($expiresInMinutes),
-        ]);
+        ];
+
+        return $this->otpRepository->createRaw($data);
     }
 
-    /**
-     * Send the OTP notification to the notifiable entity.
-     *
-     * @param  Model  $otpable  The entity receiving the notification
-     * @param  OneTimePassword  $otpRecord  The OTP record
-     * @param  string  $plainCode  The plain code to include in notification
-     * @return bool True if notification was sent successfully
-     */
-    private function sendOtpNotification(Model $otpable, OneTimePassword $otpRecord, string $plainCode): bool
+    private function sendOtpNotification(Model $otpable, OneTimePassword $otpModel, string $plainCode): bool
     {
         try {
-            $otpable->notify(new OtpNotification($otpRecord, $plainCode));
-
+            $notification = new OtpNotification($otpModel, $plainCode, $this->translator);
+            $otpable->notify($notification);
             return true;
         } catch (\Exception $exception) {
             Log::error('Failed to send OTP notification', [
                 'otpable_type' => $otpable->getMorphClass(),
                 'otpable_id' => $otpable->getKey(),
-                'type' => $otpRecord->type,
-                'destination' => $otpRecord->destination,
+                'type' => $otpModel->type,
+                'destination' => $otpModel->destination,
                 'error' => $exception->getMessage(),
             ]);
-
             return false;
         }
     }
 
-    /**
-     * Find any OTP record (valid or invalid) for the given parameters.
-     *
-     * @param  Model  $otpable  The entity
-     * @param  string  $type  OTP type
-     * @param  string  $destination  Destination address
-     * @return OneTimePassword|null The most recent OTP or null
-     */
-    private function findOtp(Model $otpable, string $type, string $destination): ?OneTimePassword
+    private function findOtpForVerification(Model $otpable, OtpProcessingContext $context): ?OneTimePassword
     {
-        return OneTimePassword::where('otpable_type', $otpable->getMorphClass())
-            ->where('otpable_id', $otpable->getKey())
-            ->where('type', $type)
-            ->where('destination', $destination)
-            ->whereNull('cancelled_at')
-            ->latest()
-            ->first();
+        return $this->otpRepository->findValidOtpForVerification(
+            otpable: $otpable,
+            type: $context->getType(),
+            destination: $context->getDestination(),
+        );
     }
 
-    /**
-     * Find a valid OTP that is not expired, verified, used, or cancelled.
-     *
-     * @param  Model  $otpable  The entity
-     * @param  string  $type  OTP type
-     * @param  string  $destination  Destination address
-     * @return OneTimePassword|null The valid OTP or null
-     */
-    private function findValidOtp(Model $otpable, string $type, string $destination): ?OneTimePassword
+    private function findPendingOtp(Model $otpable, OtpProcessingContext $context): ?OneTimePassword
     {
-        return OneTimePassword::where('otpable_type', $otpable->getMorphClass())
-            ->where('otpable_id', $otpable->getKey())
-            ->where('type', $type)
-            ->where('destination', $destination)
-            ->whereNull('verified_at')
-            ->whereNull('used_at')
-            ->whereNull('cancelled_at')
-            ->where('expires_at', '>', now())
-            ->latest()
-            ->first();
+        return $this->otpRepository->findPendingOtp(
+            otpable: $otpable,
+            type: $context->getType(),
+            destination: $context->getDestination(),
+        );
     }
 
-    /**
-     * Find a pending OTP that is still valid for use.
-     *
-     * @param  Model  $otpable  The entity
-     * @param  string  $type  OTP type
-     * @param  string  $destination  Destination address
-     * @return OneTimePassword|null The pending OTP or null
-     */
-    private function findPendingOtp(Model $otpable, string $type, string $destination): ?OneTimePassword
+    private function deleteOldPendingOtps(Model $otpable, OtpProcessingContext $context): int
     {
-        return OneTimePassword::where('otpable_type', $otpable->getMorphClass())
-            ->where('otpable_id', $otpable->getKey())
-            ->where('type', $type)
-            ->where('destination', $destination)
-            ->whereNull('verified_at')
-            ->whereNull('used_at')
-            ->whereNull('cancelled_at')
-            ->where('expires_at', '>', now())
-            ->latest()
-            ->first();
+        return $this->otpRepository->deleteOldPendingOtps(
+            otpable: $otpable,
+            type: $context->getType(),
+            destination: $context->getDestination(),
+        );
     }
 
-    /**
-     * Delete all old pending OTPs for the given parameters.
-     *
-     * @param  Model  $otpable  The entity
-     * @param  string  $type  OTP type
-     * @param  string  $destination  Destination address
-     */
-    private function deleteOldPendingOtps(Model $otpable, string $type, string $destination): void
+    private function cancelPendingOtps(Model $otpable, OtpProcessingContext $context): int
     {
-        OneTimePassword::where('otpable_type', $otpable->getMorphClass())
-            ->where('otpable_id', $otpable->getKey())
-            ->where('type', $type)
-            ->where('destination', $destination)
-            ->whereNull('verified_at')
-            ->whereNull('used_at')
-            ->delete();
+        return $this->otpRepository->cancelPendingOtps(
+            otpable: $otpable,
+            type: $context->getType(),
+            destination: $context->getDestination(),
+        );
     }
 
-    /**
-     * Build a rate limit key for OTP request operations.
-     *
-     * @param  Model  $otpable  The entity
-     * @param  string  $type  OTP type
-     * @param  string  $destination  Destination address
-     * @return string Rate limit key
-     */
-    private function buildRequestRateLimitKey(Model $otpable, string $type, string $destination): string
+    private function handleFailedVerification(
+        OneTimePassword $otpModel,
+        string $rateLimitKey,
+        OtpProcessingContext $context,
+        string $code,
+    ): OtpProcessingContext {
+        $this->incrementAttempts($otpModel);
+        $this->recordFailedVerificationAttempt($rateLimitKey);
+
+        $maxAttempts = $otpModel->max_attempts ?? $this->config->otpConfig()->default_max_attempts;
+        $remainingAttempts = $maxAttempts - $otpModel->attempts;
+
+        $context->recordAttempt($code, false, $this->translator->trans($this->messageConfig->invalidCodeAttemptsRemaining(), ['attempts' => $remainingAttempts]));
+
+        if ($remainingAttempts <= 0) {
+            $this->cancelOtpModel($otpModel);
+            $context->setError($this->translator->trans($this->messageConfig->maxAttemptsExceeded()));
+            $context->setFinalResult(new OtpResultRecord(
+                is_success: false,
+                message: $this->translator->trans($this->messageConfig->maxAttemptsExceeded()),
+                data: null,
+                occurred_at: new DateTimeVO(null),
+            ));
+            return $context;
+        }
+
+        $message = $remainingAttempts > 1
+            ? $this->translator->trans($this->messageConfig->invalidCodeAttemptsRemaining(), ['attempts' => $remainingAttempts])
+            : $this->translator->trans($this->messageConfig->invalidCodeOneAttemptRemaining());
+
+        $context->setError($message);
+        $context->setFinalResult(new OtpResultRecord(
+            is_success: false,
+            message: $message,
+            data: new StrictDataObject(['remaining_attempts' => $remainingAttempts]),
+            occurred_at: new DateTimeVO(null),
+        ));
+        return $context;
+    }
+
+    private function handleSuccessfulVerification(
+        OneTimePassword $otpModel,
+        string $rateLimitKey,
+        OtpProcessingContext $context,
+        string $code,
+        bool $consume,
+        Model $otpable,
+    ): OtpProcessingContext {
+        if (!$otpModel->isVerified()) {
+            $this->markAsVerified($otpModel);
+        }
+
+        $context->recordAttempt($code, true);
+        $context->markAsVerified();
+
+        if ($consume) {
+            $this->markAsUsed($otpModel);
+            $context->markAsConsumed();
+        }
+
+        $this->rateLimiter->clear($rateLimitKey);
+        $this->rateLimiter->clear($this->buildRequestRateLimitKey($otpable, $context));
+
+        $context->setFinalResult(new OtpResultRecord(
+            is_success: true,
+            message: $this->translator->trans($this->messageConfig->verifySuccess()),
+            data: new StrictDataObject([
+                'meta' => $otpModel->meta,
+                'consumed' => $consume,
+            ]),
+            occurred_at: new DateTimeVO(null),
+        ));
+        $context->setCurrentStep(OtpProcessingStep::VERIFIED);
+
+        return $context;
+    }
+
+    private function buildRequestRateLimitKey(Model $otpable, OtpProcessingContext $context): string
     {
         return sprintf(
             'otp_request:%s:%d:%s:%s',
             $otpable->getMorphClass(),
             $otpable->getKey(),
-            $type,
-            md5($destination)
+            $context->getType(),
+            md5($context->getDestination())
         );
     }
 
-    /**
-     * Build a rate limit key for OTP verification operations.
-     *
-     * @param  Model  $otpable  The entity
-     * @param  string  $type  OTP type
-     * @param  string  $destination  Destination address
-     * @return string Rate limit key
-     */
-    private function buildVerificationRateLimitKey(Model $otpable, string $type, string $destination): string
+    private function buildVerificationRateLimitKey(Model $otpable, OtpProcessingContext $context): string
     {
         return sprintf(
             'otp_verify:%s:%d:%s:%s',
             $otpable->getMorphClass(),
             $otpable->getKey(),
-            $type,
-            md5($destination)
+            $context->getType(),
+            md5($context->getDestination())
         );
     }
 }

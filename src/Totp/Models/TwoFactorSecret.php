@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace AndyDefer\Mfa\Totp\Models;
 
+use AndyDefer\Mfa\Totp\Services\TOTPService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use AndyDefer\Mfa\Totp\Services\TOTPService;
 
 /**
  * Eloquent model for TOTP (Time-based One-Time Password) secrets.
@@ -55,6 +55,8 @@ class TwoFactorSecret extends Model
         'is_enabled',
         'confirmed_at',
         'last_used_at',
+        'created_at',
+        'updated_at',
     ];
 
     /**

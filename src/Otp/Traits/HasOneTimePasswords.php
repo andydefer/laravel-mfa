@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace AndyDefer\Mfa\Otp\Traits;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 use AndyDefer\Mfa\Otp\Data\OtpResponseData;
 use AndyDefer\Mfa\Otp\Models\OneTimePassword;
 use AndyDefer\Mfa\Otp\Services\OtpService;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
  * Trait for Eloquent models that need One-Time Password (OTP) capabilities.

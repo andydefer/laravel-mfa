@@ -13,9 +13,9 @@ use AndyDefer\Mfa\Core\Services\MfaInstallerService;
 use AndyDefer\Mfa\MfaServiceProvider;
 use AndyDefer\Mfa\Otp\Contracts\CodeGeneratorInterface;
 use AndyDefer\Mfa\Otp\Contracts\RateLimiterInterface;
+use AndyDefer\Mfa\Otp\Services\DefaultCodeGenerator;
 use AndyDefer\Mfa\Otp\Services\LaravelRateLimiter;
 use AndyDefer\Mfa\Otp\Services\OtpService;
-use AndyDefer\Mfa\Otp\Services\DefaultCodeGenerator;
 use AndyDefer\Mfa\Tests\TestCase;
 use AndyDefer\Mfa\Totp\Services\TOTPService;
 
@@ -195,19 +195,19 @@ final class MfaServiceProviderTest extends TestCase
         $provider->boot();
 
         // Assert: Package configuration and migration files exist and are ready for publishing
-        $configPath = __DIR__ . '/../../config/mfa.php';
-        $migrationPath = __DIR__ . '/../../database/migrations/';
-        $langPath = realpath(__DIR__ . '/../../src/Lang');
+        $configPath = __DIR__.'/../../config/mfa.php';
+        $migrationPath = __DIR__.'/../../database/migrations/';
+        $langPath = realpath(__DIR__.'/../../src/Lang');
 
         $this->assertFileExists($configPath);
         $this->assertDirectoryExists($migrationPath);
 
         if ($langPath !== false) {
             $this->assertDirectoryExists($langPath);
-            $this->assertDirectoryExists($langPath . '/fr');
-            $this->assertDirectoryExists($langPath . '/en');
-            $this->assertFileExists($langPath . '/fr/messages.php');
-            $this->assertFileExists($langPath . '/en/messages.php');
+            $this->assertDirectoryExists($langPath.'/fr');
+            $this->assertDirectoryExists($langPath.'/en');
+            $this->assertFileExists($langPath.'/fr/messages.php');
+            $this->assertFileExists($langPath.'/en/messages.php');
         }
     }
 
@@ -428,13 +428,13 @@ final class MfaServiceProviderTest extends TestCase
         $provider->boot();
 
         // Assert: Language directories exist
-        $langPath = realpath(__DIR__ . '/../../src/Core/Lang');
+        $langPath = realpath(__DIR__.'/../../src/Core/Lang');
         $this->assertNotFalse($langPath, 'Lang directory should exist');
 
-        $this->assertDirectoryExists($langPath . '/fr');
-        $this->assertDirectoryExists($langPath . '/en');
-        $this->assertFileExists($langPath . '/fr/messages.php');
-        $this->assertFileExists($langPath . '/en/messages.php');
+        $this->assertDirectoryExists($langPath.'/fr');
+        $this->assertDirectoryExists($langPath.'/en');
+        $this->assertFileExists($langPath.'/fr/messages.php');
+        $this->assertFileExists($langPath.'/en/messages.php');
     }
 
     /**
@@ -450,7 +450,7 @@ final class MfaServiceProviderTest extends TestCase
         $provider->boot();
 
         // Assert: The TOTP migration file exists in the package
-        $totpMigrationPath = realpath(__DIR__ . '/../../database/migrations/2026_01_01_000001_create_two_factor_secrets_table.php');
+        $totpMigrationPath = realpath(__DIR__.'/../../database/migrations/2026_01_01_000001_create_two_factor_secrets_table.php');
 
         if ($totpMigrationPath !== false) {
             $this->assertFileExists($totpMigrationPath);

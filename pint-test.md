@@ -1,34 +1,17 @@
 # Pint Formatting Test Report
-*Generated: jeu. 11 juin 2026 15:56:53 WAT*
+*Generated: ven. 12 juin 2026 07:09:50 WAT*
 
 
-  .⨯.⨯⨯...⨯⨯⨯⨯....⨯⨯...⨯..⨯⨯⨯⨯⨯⨯⨯⨯.⨯⨯⨯⨯⨯.⨯..⨯..
+  ..........................⨯⨯⨯.......⨯.....⨯.......⨯...........⨯....⨯
 
   ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── Laravel  
-    FAIL   ................................................................................................................................................. 45 files, 25 style issues  
-  ⨯ src/Core/Commands/CleanupMfaCommand.php                                                                  unary_operator_spaces, not_operator_with_successor_space, ordered_imports  
-  ⨯ src/Core/Commands/InstallMfaCommand.php                                                                  unary_operator_spaces, not_operator_with_successor_space, ordered_imports  
-  ⨯ src/Core/Services/MfaInstallerService.php                        single_quote, concat_space, unary_operator_spaces, not_operator_with_successor_space, blank_line_before_statement  
-  ⨯ src/MfaServiceProvider.php                                                                                                                           concat_space, ordered_imports  
-  ⨯ src/Otp/Notifications/OtpNotification.php                       unary_operator_spaces, braces_position, not_operator_with_successor_space, single_line_empty_body, ordered_imports  
-  ⨯ src/Otp/Services/LaravelRateLimiter.php                                                                                                                            ordered_imports  
-  ⨯ src/Otp/Services/OtpService.php                                 unary_operator_spaces, braces_position, not_operator_with_successor_space, single_line_empty_body, ordered_imports  
-  ⨯ src/Otp/Traits/HasOneTimePasswords.php                                                                                                                             ordered_imports  
-  ⨯ src/Totp/Models/TwoFactorSecret.php                                                                                                                                ordered_imports  
-  ⨯ src/Totp/Traits/HasTwoFactorAuthentication.php                                                           unary_operator_spaces, not_operator_with_successor_space, ordered_imports  
-  ⨯ tests/Feature/Models/OneTimePasswordTest.php                                                                                                                       ordered_imports  
-  ⨯ tests/Feature/Models/TwoFactorSecretTest.php                                                                                                         concat_space, ordered_imports  
-  ⨯ tests/Feature/Services/OtpServiceTest.php                                                                                                            concat_space, ordered_imports  
-  ⨯ tests/Feature/Services/TOTPServiceTest.php                                                                                                                            concat_space  
-  ⨯ tests/Feature/Traits/HasOneTimePasswordsTest.php                                                                                                                   ordered_imports  
-  ⨯ tests/Feature/Traits/HasTwoFactorAuthenticationTest.php                                                                                                            ordered_imports  
-  ⨯ tests/Support/TestCheckPoint.php                                                                                                                                   ordered_imports  
-  ⨯ tests/Support/TestUser.php                                                                                                                                         ordered_imports  
-  ⨯ tests/TestCase.php                                                                                                                                   concat_space, ordered_imports  
-  ⨯ tests/Unit/Commands/CleanupMfaCommandTest.php                                                                                                                      ordered_imports  
-  ⨯ tests/Unit/Commands/InstallMfaCommandTest.php                                                                                                                      ordered_imports  
-  ⨯ tests/Unit/MfaServiceProviderTest.php                                                                                                                concat_space, ordered_imports  
-  ⨯ tests/Unit/Notifications/OtpNotificationTest.php                                                                                class_definition, braces_position, ordered_imports  
-  ⨯ tests/Unit/Services/LaravelRateLimiterTest.php                                                                                                       concat_space, ordered_imports  
-  ⨯ tests/Unit/Services/MfaInstallerServiceTest.php                                            concat_space, unary_operator_spaces, not_operator_with_successor_space, ordered_imports  
+    FAIL   .................................................................................................................................................. 68 files, 8 style issues  
+  ⨯ database/migrations/2026_01_15_000001_create_one_time_passwords_table.php                                                     class_definition, braces_position, no_unused_imports  
+  ⨯ src/Otp/Models/OneTimePassword.php no_superfluous_phpdoc_tags, blank_line_after_opening_tag, phpdoc_trim, no_unused_imports, not_operator_with_successor_space, self_static_acces…  
+  ⨯ src/Otp/Records/OneTimePasswordFilterRecord.php                                                              blank_line_after_opening_tag, braces_position, single_line_empty_body  
+  ⨯ src/Otp/Records/OneTimePasswordRecord.php                                                                    blank_line_after_opening_tag, braces_position, single_line_empty_body  
+  ⨯ src/Otp/Repositories/OneTimePasswordRepository.php new_with_parentheses, no_superfluous_phpdoc_tags, blank_line_after_opening_tag, no_trailing_whitespace_in_comment, no_unused_i…  
+  ⨯ src/Otp/Services/OtpService.php new_with_parentheses, blank_line_after_opening_tag, no_unused_imports, not_operator_with_successor_space, blank_line_before_statement, ordered_im…  
+  ⨯ tests/Integration/Otp/Services/OtpServiceTest.php class_attributes_separation, new_with_parentheses, fully_qualified_strict_types, concat_space, braces_position, no_unused_impor…  
+  ⨯ tests/IntegrationTestCase.php                                                                                                                   concat_space, no_extra_blank_lines  
 

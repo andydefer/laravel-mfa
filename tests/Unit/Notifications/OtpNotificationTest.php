@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace AndyDefer\Mfa\Tests\Unit\Notifications;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use AndyDefer\Mfa\Otp\Models\OneTimePassword;
 use AndyDefer\Mfa\Otp\Notifications\OtpNotification;
 use AndyDefer\Mfa\Tests\Support\TestCheckPoint;
 use AndyDefer\Mfa\Tests\Support\TestUser;
 use AndyDefer\Mfa\Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * Test suite for the OtpNotification class.

@@ -6,13 +6,13 @@ declare(strict_types=1);
 
 namespace AndyDefer\Mfa\Tests\Unit\Commands;
 
-use Carbon\Carbon;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use AndyDefer\Mfa\Core\Commands\CleanupMfaCommand;
 use AndyDefer\Mfa\Otp\Models\OneTimePassword;
 use AndyDefer\Mfa\Tests\TestCase;
 use AndyDefer\Mfa\Totp\Services\TOTPService;
+use Carbon\Carbon;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Test suite for the CleanupMfaCommand.

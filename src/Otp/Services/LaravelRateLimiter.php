@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AndyDefer\Mfa\Otp\Services;
 
-use Illuminate\Support\Facades\RateLimiter;
 use AndyDefer\Mfa\Otp\Contracts\RateLimiterInterface;
+use Illuminate\Support\Facades\RateLimiter;
 
 /**
  * Laravel implementation of the rate limiter interface.

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace AndyDefer\Mfa\Otp\Notifications;
 
+use AndyDefer\Mfa\Core\Services\TranslationService;
+use AndyDefer\Mfa\Otp\Contracts\MustOtpChannels;
+use AndyDefer\Mfa\Otp\Models\OneTimePassword;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use AndyDefer\Mfa\Core\Helpers\TranslationHelper;
-use AndyDefer\Mfa\Otp\Contracts\MustOtpChannels;
-use AndyDefer\Mfa\Otp\Models\OneTimePassword;
 
 /**
  * Notification for delivering OTP codes to users via configured channels.
@@ -29,10 +29,12 @@ final class OtpNotification extends Notification
      *
      * @param  OneTimePassword  $otp  The OTP model instance containing metadata
      * @param  string  $plainCode  The plain text OTP code (not stored in DB)
+     * @param  TranslationService  $translator  The translation service for i18n
      */
     public function __construct(
         private readonly OneTimePassword $otp,
-        private readonly string $plainCode
+        private readonly string $plainCode,
+        private readonly TranslationService $translator,
     ) {}
 
     /**
@@ -74,15 +76,15 @@ final class OtpNotification extends Notification
         $codeBlock = $this->buildCodeBlock();
 
         return (new MailMessage)
-            ->subject(TranslationHelper::trans('messages.subject', ['app_name' => config('app.name')]))
+            ->subject($this->translator->trans('messages.subject', ['app_name' => config('app.name')]))
             ->greeting($greeting)
-            ->line(TranslationHelper::trans('messages.intro'))
+            ->line($this->translator->trans('messages.intro'))
             ->line('')
             ->line($codeBlock)
             ->line('')
-            ->line(TranslationHelper::trans('messages.expires_in', ['minutes' => $expiresIn]))
-            ->line(TranslationHelper::trans('messages.ignore_request'))
-            ->salutation(TranslationHelper::trans('messages.salutation', ['app_name' => config('app.name')]));
+            ->line($this->translator->trans('messages.expires_in', ['minutes' => $expiresIn]))
+            ->line($this->translator->trans('messages.ignore_request'))
+            ->salutation($this->translator->trans('messages.salutation', ['app_name' => config('app.name')]));
     }
 
     /**
@@ -110,7 +112,7 @@ final class OtpNotification extends Notification
     private function buildGreeting($notifiable): string
     {
         $name = $this->extractNotifiableName($notifiable);
-        $template = TranslationHelper::trans('messages.greeting');
+        $template = $this->translator->trans('messages.greeting');
 
         return sprintf($template, $name);
     }
@@ -125,7 +127,7 @@ final class OtpNotification extends Notification
     {
         return $notifiable->name
             ?? $notifiable->email
-            ?? TranslationHelper::trans('messages.default_user_name');
+            ?? $this->translator->trans('messages.default_user_name');
     }
 
     /**
